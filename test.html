@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <script src="jquery.min.js"></script>
+        <script src="jquery.json-2.4.js"></script>
+        <script src="jquery.jsonrpcclient.js"></script>
+        <script src="Twister.js"></script>
+        <script src="TwisterUser.js"></script>
+        <script src="TwisterPost.js"></script>
+        <script>
+            
+            
+Twister.RPCbatch("dhtget", [ ["myleneb","status","s"] , ["myleneb","post333","s"] ],
+    function(a,results) {
+        console.log(results);
+    }, "a",
+    function(a,ret) {console.log(ret);}, null);
+            
+            
+        </script>
+    </head>
+    <body>
+    
+    
+    </body>
+</html>
