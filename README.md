@@ -1,5 +1,5 @@
 # LibTwister
-A [Twister](http://twister.net.co) Library in JS
+A [Twister](http://twister.net.co) Library in JavaScript
 
 ## Scope of this Project
 *Disclaimer: None of the following functions are implemented at the moment.*
