@@ -9,5 +9,5 @@ LibTwister handles all querying and manipulation of the Twister P2P network, giv
 LibTwister should be compilable for as many platforms as possible including:
 - All popular Browsers (for web apps as well as firefoxOS)
 - node-js (for server-side functionality)
-- The iOS Javascript VM (for builing native iOS apps)
-- The Android Javascript VM (for builing native android apps)
+- The iOS Javascript VM (for building native iOS apps)
+- The Android Javascript VM (for building native android apps)
