@@ -6,32 +6,27 @@ Twister.Cache = {};
 
 Twister.RPC = function (method, params, resultFunc, resultArg, errorFunc, errorArg) {
     var foo = new $.JsonRpcClient({ 
-        ajaxUrl: "http://localhost:28332", 
-        username: 'user', 
-        password: 'pwd'
+        ajaxUrl: "http://178.62.231.62"
     });
     foo.call(method, params,
-        function(ret) { resultFunc(resultArg, ret); },
-        function(ret) { if(ret != null) errorFunc(errorArg, ret); }
+        function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },
+        function(ret) { if(typeof errorFunc === "function" && ret != null) errorFunc(ret); }
     );
 }
-Twister.RPCbatch = function (method, params, resultFunc, resultArg, errorFunc, errorArg) {
+Twister.RPCbatch = function (method, params, resultFunc, errorFunc) {
+    
     var foo = new $.JsonRpcClient({ 
-        ajaxUrl: "http://localhost:28332", 
-        username: 'user', 
-        password: 'pwd'
+        ajaxUrl: "http://178.62.231.62"
     });
+    
     foo.batch(function (batch) {
         for(var i=0; i<params.length; i++){
             batch.call(method, params[i],
-                function(ret) { resultFunc(resultArg, ret); },
-                function(ret) { if(ret != null) errorFunc(errorArg, ret); }
+                function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },
+                function(ret) { if(typeof errorFunc === "function" && ret != null) errorFunc(ret); }
             );
         }
-    },
-        function(ret) { resultFunc(resultArg, ret); },
-        function(ret) { if(ret != null) errorFunc(errorArg, ret); }
-    );
+    },function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },null);
 }
 
 Twister.getUser = function (initval) {
@@ -44,6 +39,6 @@ Twister.getUser = function (initval) {
     
     
     
-    return Twister.Cache[k];
+    return Twister.Cache[initval];
 
 }
