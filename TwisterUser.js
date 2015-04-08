@@ -14,14 +14,17 @@ TwisterUser.prototype.update = function (cbfunc) {
     Twister.RPC("dhtget", [thisUser._name, "status", "s"],
         function (result) {
         
-            var newpost = new TwisterPost(result[0].p.v.userpost);
-            thisUser._latestId = newpost.getId();
-            thisUser._latestTimestamp = newpost.getTimestamp();
-            thisUser._posts[thisUser._latestId]=newpost;
+	        if (result[0]) {
 
-            thisUser._lastUpdate = Date.now();
+                var newpost = new TwisterPost(result[0].p.v.userpost);
+                thisUser._latestId = newpost.getId();
+                thisUser._latestTimestamp = newpost.getTimestamp();
+                thisUser._posts[thisUser._latestId]=newpost;
 
-            if (cbfunc) cbfunc(newpost);
+                thisUser._lastUpdate = Date.now();
+
+                if (cbfunc) cbfunc(newpost);
+            }
         
         },
         function(ret) {console.log(ret);}
@@ -30,6 +33,7 @@ TwisterUser.prototype.update = function (cbfunc) {
 }
 
 TwisterUser.prototype.doPostsSince = function (timestamp,cbfunc) {
+    
     
     var thisUser = this;
     
@@ -46,24 +50,37 @@ TwisterUser.prototype.doPostsSince = function (timestamp,cbfunc) {
     
 }
 
+TwisterUser.prototype.bindPostsSince = function (timestamp,cbfunc) {
+
+    var bind = new TwisterBinding(this,"doPostsSince",cbfunc,timestamp); 
+    bind.run();
+
+}
+
 TwisterUser.prototype.doPost = function (id,cbfunc) {
 
-    if (id in this._posts){
-        cbfunc(this._posts[id])
-    } else {
-        var thisUser = this;
-        Twister.RPC("dhtget", [thisUser._name, "post"+id, "s"],
-            function (result) {
+    if (id) {
 
-                var id = result[0].p.v.userpost.k;
-                var newpost = new TwisterPost(result[0].p.v.userpost);
-                thisUser._posts[id]=newpost;
+        if (id in this._posts){
+            cbfunc(this._posts[id])
+        } else {
+            var thisUser = this;
+            Twister.RPC("dhtget", [thisUser._name, "post"+id, "s"],
+                function (result) {
+                    
+                    if (result[0]) {
 
-                cbfunc(newpost);
+                        var id = result[0].p.v.userpost.k;
+                        var newpost = new TwisterPost(result[0].p.v.userpost);
+                        thisUser._posts[id]=newpost;
 
-            },
-            function(ret) {console.log(ret);}
-        );   
+                        cbfunc(newpost);
+                    }
+
+                },
+                function(ret) {console.log(ret);}
+            );   
+        }
     }
     
 }
