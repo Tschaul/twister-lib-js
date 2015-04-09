@@ -16,7 +16,7 @@ A techdemo of LibTwister combined with react-js can be found at github.com/Tscha
 
 ## Example code
 
-Display the content latest post of user tschaul:
+Display the content of the latest post of user tschaul:
 ```
 Twister.getUser("tschaul").doStatus(function(post){
   console.log(post.getContent());  
