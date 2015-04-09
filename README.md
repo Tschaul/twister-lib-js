@@ -12,7 +12,7 @@ LibTwister should be compilable for as many platforms as possible including:
 - The iOS Javascript VM (for building native iOS apps)
 - The Android Javascript VM (for building native android apps)
 
-A techdemo of LibTwister combined with react-js can be found at [http://github.com/Tschaul/twister-react]
+A techdemo of LibTwister combined with react-js can be found at http://github.com/Tschaul/twister-react
 
 ## Example code
 
