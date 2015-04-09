@@ -47,5 +47,5 @@ var string = JSON.stringify(Twister.serializeCache());
 
 Deserialize the cache from a string
 ```
-Twister.serializeCache(JSON.parse(string));
+Twister.deserializeCache(JSON.parse(string));
 ```
