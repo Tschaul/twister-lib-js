@@ -1,9 +1,31 @@
 function TwisterPost(data) {
     this._data = data;
     this._retwists = {};
+    this._lastRetwistUpdate = -1;
     this._replies = {};
+    this._lastReplyUpdate = -1;
 }
 
+TwisterPost.prototype.flatten = function () {
+
+    return {
+        data: this._data,
+        retwists: this._retwists,
+        lastRetwistUpdate: this._lastRetwistUpdate,
+        replies: this._replies,
+        lastReplyUpdate: this._lastReplyUpdate
+    };
+
+}
+
+TwisterPost.prototype.inflate = function (flatData) {
+    
+    this._replies=flatData.replies;
+    this._lastReplyUpdate=flatData.lastReplyUpdate;
+    this._retwists=flatData.retwists;
+    this._lastRetwistUpdate=flatData.lastRetwistUpdate;
+
+}
 
 TwisterPost.prototype.getId = function () {
     return this._data.k;
@@ -21,19 +43,27 @@ TwisterPost.prototype.getContent = function () {
     return this._data.msg;
 }
 
-TwisterPost.prototype.getUser = function () {
+TwisterPost.prototype.getUsername = function () {
     return this._data.n;
 }
 
-TwisterPost.prototype.getReplyInfo = function () {
-    return this._data.reply;
+TwisterPost.prototype.isReply = function () {
+    return ("reply" in this._data);
+}
+
+TwisterPost.prototype.getReplyUser = function () {
+    return this._data.reply.n;
+}
+
+TwisterPost.prototype.getReplyId = function () {
+    return this._data.reply.k;
 }
 
 TwisterPost.prototype.doReplies = function (cbfunc) {
 
     
     var thisPost = this;
-    Twister.RPC("dhtget", [thisPost.getUser(), "replies"+thisPost.getId(), "m"],
+    Twister.dhtget([thisPost.getUsername(), "replies"+thisPost.getId(), "m"],
         function (result) {
 
             for (i=0; i<result.length; i++) {
@@ -57,8 +87,7 @@ TwisterPost.prototype.doReplies = function (cbfunc) {
             
             }
 
-        },
-        function(ret) {console.log(ret);}
+        }
     );   
     
     
@@ -67,9 +96,8 @@ TwisterPost.prototype.doReplies = function (cbfunc) {
 TwisterPost.prototype.doHeadOfConversation = function (cbfunc) {
 
     var goUpConversation = function (post) {
-        if (post.getReplyInfo()) {
-            var rpinfo = post.getReplyInfo();
-            Twister.getUser(rpinfo.n).doPost(rpinfo.k,goUpConversation);            
+        if (post.isReply()) {
+            Twister.getUser(post.getReplyUser()).doPost(post.getReplyId(),goUpConversation);            
         } else {
             cbfunc(post);
         }
@@ -96,4 +124,39 @@ TwisterPost.prototype.doConversation = function (cbfunc) {
         
     });
 
+}
+
+TwisterPost.prototype.isRetwist = function () {
+    return ("rt" in this._data);
+}
+
+TwisterPost.prototype.getRetwistedId = function () {
+    return this._data.rt.k;
+}
+
+TwisterPost.prototype.getRetwistedlastId = function () {
+    return this._data.rt.lastk;
+}
+
+TwisterPost.prototype.getRetwistedTimestamp = function () {
+    return this._data.rt.time;
+}
+
+TwisterPost.prototype.getRetwistedContent = function () {
+    return this._data.rt.msg;
+}
+
+TwisterPost.prototype.getRetwistedUser = function () {
+    return this._data.rt.n;
+}
+
+TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
+    
+    var id = this._data.rt.k;
+    if (!Twister.getUser(this._data.rt.n)._posts[id]) {
+        var newpost = new TwisterPost(this._data.rt);
+        Twister.getUser(this._data.rt.n)._posts[id]=newpost;
+    }
+
+    cbfunc(Twister.getUser(this._data.rt.n)._posts[id]);
 }

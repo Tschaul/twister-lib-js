@@ -2,43 +2,66 @@
 
 var Twister = {};
 
-Twister.Cache = {};
+Twister._cache = {};
 
 Twister.RPC = function (method, params, resultFunc, resultArg, errorFunc, errorArg) {
     var foo = new $.JsonRpcClient({ 
-        ajaxUrl: "http://178.62.231.62"
+        ajaxUrl: "http://twister-proxy.tschaul.com",
+        timeout: 20000
     });
     foo.call(method, params,
         function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },
         function(ret) { if(typeof errorFunc === "function" && ret != null) errorFunc(ret); }
     );
 }
-Twister.RPCbatch = function (method, params, resultFunc, errorFunc) {
-    
-    var foo = new $.JsonRpcClient({ 
-        ajaxUrl: "http://178.62.231.62"
+
+Twister.dhtget = function (args,cbfunc) {
+
+    Twister.RPC("dhtget", args, cbfunc, function(ret) {
+        console.log(ret);
     });
-    
-    foo.batch(function (batch) {
-        for(var i=0; i<params.length; i++){
-            batch.call(method, params[i],
-                function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },
-                function(ret) { if(typeof errorFunc === "function" && ret != null) errorFunc(ret); }
-            );
-        }
-    },function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },null);
+
 }
 
 Twister.getUser = function (initval) {
 
-    if (Twister.Cache[initval] === undefined) {
+    if (Twister._cache[initval] === undefined) {
             
-        Twister.Cache[initval] = new TwisterUser(initval);
+        Twister._cache[initval] = new TwisterUser(initval);
 
     }
     
-    
-    
-    return Twister.Cache[initval];
+    return Twister._cache[initval];
 
+}
+
+Twister.getUsers = function (names) {
+
+    var users = new TwisterUsers(names);
+    return users;
+
+}
+
+Twister.serializeCache = function () {
+
+    var retUser = [];
+    
+    for (var username in this._cache){
+        retUser.push(this._cache[username].flatten());
+    }
+    
+    return {users: retUser};
+
+
+}
+
+Twister.deserializeCache = function (flatData) {
+
+    for(var i = 0; i < flatData.users.length; i++){
+        
+        var newuser = new TwisterUser(flatData.users[i].name);
+        newuser.inflate(flatData.users[i]);
+        this._cache[flatData.users[i].name]=newuser;
+    
+    }
 }
