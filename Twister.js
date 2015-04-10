@@ -4,6 +4,10 @@ var Twister = {};
 
 Twister._cache = {};
 
+Twister._activeDHTQueries = 0;
+Twister._maxDHTQueries = 5;
+
+
 Twister.RPC = function (method, params, resultFunc, resultArg, errorFunc, errorArg) {
     var foo = new $.JsonRpcClient({ 
         ajaxUrl: "http://twister-proxy.tschaul.com",
@@ -17,9 +21,33 @@ Twister.RPC = function (method, params, resultFunc, resultArg, errorFunc, errorA
 
 Twister.dhtget = function (args,cbfunc) {
 
-    Twister.RPC("dhtget", args, cbfunc, function(ret) {
-        console.log(ret);
-    });
+    if ( Twister._activeDHTQueries < Twister._maxDHTQueries ) {
+    
+        Twister._activeDHTQueries++;
+        
+        Twister.RPC("dhtget", args, function(post){
+            
+            Twister._activeDHTQueries--;
+            cbfunc(post);
+        
+        }, function(ret) {
+            
+            Twister._activeDHTQueries--;
+            console.log(ret);
+            
+        });
+        
+    } else {
+        
+        //console.log("delayed dht query");
+        
+        setTimeout(function(){
+        
+            Twister.dhtget(args,cbfunc);
+            
+        },200);
+    
+    }
 
 }
 

@@ -2,6 +2,7 @@
 
 function TwisterUser(name) {
     
+    //cached fields
     this._name = name;
     this._posts = {};
     this._profile = null;
@@ -13,6 +14,9 @@ function TwisterUser(name) {
     this._lastFollowingsUpdate = -1;
     this._latestId = -1;
     this._latestTimestamp = -1;
+    
+    //uncached fields
+    this._torrent = null;
     
 }
 
@@ -71,8 +75,21 @@ TwisterUser.prototype.getUsername = function () {
 
 }
 
-TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
+TwisterUser.prototype.getTorrent = function () {
 
+    if (this._torrent==null) {
+    
+        var newtorrent = new TwisterTorrent(this._name);
+        this._torrent = newtorrent;
+        
+    }
+
+    return this._torrent;
+
+}
+
+TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
+    
     var outdatedTimestamp = 0;
         
     if (outdatedLimit !== undefined) {
@@ -89,25 +106,39 @@ TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
         
         var thisUser = this;
         
-        Twister.dhtget([thisUser._name, "status", "s"],
-            function (result) {
+        thisUser.getTorrent().updateCache(function(success){
+        
+            if (success) {
+                
+                thisUser.doPost(thisUser._latestId,cbfunc);
+                
+            } else {
+                            
+                console.log("no success " + thisUser._name);
+                
+                Twister.dhtget([thisUser._name, "status", "s"],
+                    function (result) {
 
-                if (result[0]) {
+                        if (result[0]) {
 
-                    var newpost = new TwisterPost(result[0].p.v.userpost);
-                    thisUser._latestId = newpost.getId();
-                    thisUser._latestTimestamp = newpost.getTimestamp();
-                    thisUser._posts[thisUser._latestId] = newpost;
+                            var newpost = new TwisterPost(result[0].p.v.userpost);
+                            thisUser._latestId = newpost.getId();
+                            thisUser._latestTimestamp = newpost.getTimestamp();
+                            thisUser._posts[thisUser._latestId] = newpost;
 
-                    thisUser._lastStatusUpdate = Date.now()/1000;
+                            thisUser._lastStatusUpdate = Date.now()/1000;
 
-                    if (cbfunc) {
-                        cbfunc(newpost);
+                            if (cbfunc) {
+                                cbfunc(newpost);
+                            }
+                        } else { cbfunc(null) }
+
                     }
-                } else { cbfunc(null) }
-
+                );
+                
             }
-        );
+            
+        });
         
     }
 
@@ -121,12 +152,13 @@ TwisterUser.prototype.doPostsSince = function (timestamp, cbfunc) {
     
     var doPostTilTimestamp = function (post) {
         
-        
-        
         if (post!==null && ( post.getTimestamp() > timestamp ) ) {
+            
             cbfunc(post);
             thisUser.doPost(post.getlastId(), doPostTilTimestamp);
+            
         }
+        
     };
         
     this.doStatus(doPostTilTimestamp);
@@ -140,11 +172,13 @@ TwisterUser.prototype.doLatestPosts = function (count, cbfunc, outdatedLimit) {
     var countSoFar = 0;
     
     var doPostTilCount = function (post) {
+        
         if (countSoFar < count) {
             cbfunc(post);
             countSoFar=countSoFar+1;
             thisUser.doPost(post.getlastId(), doPostTilCount);
         }
+        
     };
       
     var outdatedTimestamp = 0;
@@ -155,27 +189,48 @@ TwisterUser.prototype.doLatestPosts = function (count, cbfunc, outdatedLimit) {
 
 TwisterUser.prototype.doPost = function (id,cbfunc) {
 
+    //console.log(this._name+":post"+id);
+    
     if (id) {
 
         if (id in this._posts){
+            
             cbfunc(this._posts[id])
+            
         } else {
+            
             var thisUser = this;
-            Twister.dhtget([thisUser._name, "post"+id, "s"],
-                function (result) {
+            
+            thisUser.getTorrent().updateCache(function(success){
+        
+                if (success) {
+
+                    thisUser.doPost(thisUser._latestId,cbfunc);
+
+                } else {
+
+                    Twister.dhtget([thisUser._name, "post"+id, "s"],
+                        function (result) {
+
+                            if (result[0]) {
+
+                                var id = result[0].p.v.userpost.k;
+                                var newpost = new TwisterPost(result[0].p.v.userpost);
+                                thisUser._posts[id]=newpost;
+
+                                cbfunc(newpost);
+                            }
+
+                        }
+                                   
+                    ); 
                     
-                    if (result[0]) {
-
-                        var id = result[0].p.v.userpost.k;
-                        var newpost = new TwisterPost(result[0].p.v.userpost);
-                        thisUser._posts[id]=newpost;
-
-                        cbfunc(newpost);
-                    }
-
                 }
-            );   
+                 
+            });
+            
         }
+        
     }
     
 };

@@ -1,3 +1,5 @@
+"use strict";
+
 function TwisterPost(data) {
     this._data = data;
     this._retwists = {};
