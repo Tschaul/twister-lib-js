@@ -1,4 +1,4 @@
-# LibTwister
+# twister-lib-js
 A [Twister](http://twister.net.co) Library in JavaScript
 
 ## Scope of this Project
