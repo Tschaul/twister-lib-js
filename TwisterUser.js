@@ -1,6 +1,6 @@
 'use strict';
 
-function TwisterUser(name) {
+function TwisterUser(name,scope) {
     
     //cached fields
     this._name = name;
@@ -15,10 +15,14 @@ function TwisterUser(name) {
     this._latestId = -1;
     this._latestTimestamp = -1;
     
+    this._scope = scope;
+    
     //uncached fields
     this._torrent = null;
     
 }
+
+module.exports = TwisterUser;
 
 TwisterUser.prototype.flatten = function () {
 
@@ -61,7 +65,7 @@ TwisterUser.prototype.inflate = function (flatData) {
     
     for(var i = 0; i < flatData.posts.length; i++){
         
-        var newpost = new TwisterPost(flatData.posts[i].data);
+        var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
         newpost.inflate(flatData.posts[i]);
         this._posts[newpost.getId()]=newpost;
     
@@ -79,7 +83,9 @@ TwisterUser.prototype.getTorrent = function () {
 
     if (this._torrent==null) {
     
-        var newtorrent = new TwisterTorrent(this._name);
+        var TwisterTorrent = require('./TwisterTorrent.js');
+        
+        var newtorrent = new TwisterTorrent(this._name,this._scope);
         this._torrent = newtorrent;
         
     }
@@ -89,6 +95,8 @@ TwisterUser.prototype.getTorrent = function () {
 }
 
 TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
+    
+    var Twister = this._scope;
     
     var outdatedTimestamp = 0;
         
@@ -114,14 +122,18 @@ TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
                 
             } else {
                             
-                console.log("no success " + thisUser._name);
+                //console.log("no success " + thisUser._name);
                 
                 Twister.dhtget([thisUser._name, "status", "s"],
                     function (result) {
 
+                        //console.log(result);
+                    
                         if (result[0]) {
+                            
+                            var TwisterPost = require('./TwisterPost.js');
 
-                            var newpost = new TwisterPost(result[0].p.v.userpost);
+                            var newpost = new TwisterPost(result[0].p.v.userpost,thisUser._scope);
                             thisUser._latestId = newpost.getId();
                             thisUser._latestTimestamp = newpost.getTimestamp();
                             thisUser._posts[thisUser._latestId] = newpost;
@@ -189,6 +201,8 @@ TwisterUser.prototype.doLatestPosts = function (count, cbfunc, outdatedLimit) {
 
 TwisterUser.prototype.doPost = function (id,cbfunc) {
 
+    var Twister = this._scope;
+    
     //console.log(this._name+":post"+id);
     
     if (id) {
@@ -214,8 +228,10 @@ TwisterUser.prototype.doPost = function (id,cbfunc) {
 
                             if (result[0]) {
 
+                                var TwisterPost = require('./TwisterPost.js');
+                                
                                 var id = result[0].p.v.userpost.k;
-                                var newpost = new TwisterPost(result[0].p.v.userpost);
+                                var newpost = new TwisterPost(result[0].p.v.userpost,thisUser._scope);
                                 thisUser._posts[id]=newpost;
 
                                 cbfunc(newpost);
@@ -237,6 +253,8 @@ TwisterUser.prototype.doPost = function (id,cbfunc) {
 
 TwisterUser.prototype.doProfile = function (cbfunc,outdatedLimit) {
 
+    var Twister = this._scope;
+    
     var outdatedTimestamp = 0;
     
     if (outdatedLimit) {
@@ -266,11 +284,12 @@ TwisterUser.prototype.doProfile = function (cbfunc,outdatedLimit) {
         
     }
 
-    
 };
 
 TwisterUser.prototype.doAvatar = function (cbfunc,outdatedLimit) {
 
+    var Twister = this._scope;
+    
     var outdatedTimestamp = 0;
     
     if (outdatedLimit) {
@@ -280,7 +299,9 @@ TwisterUser.prototype.doAvatar = function (cbfunc,outdatedLimit) {
     if (this._lastAvatarUpdate > outdatedTimestamp){
         cbfunc(this._avatar)
     } else {
+        
         var thisUser = this;
+        
         Twister.dhtget([thisUser._name, "avatar", "s"],
             function (result) {
 
@@ -298,11 +319,12 @@ TwisterUser.prototype.doAvatar = function (cbfunc,outdatedLimit) {
         
     }
 
-    
 };
 
 TwisterUser.prototype.doFollowings = function (cbfunc,outdatedLimit ) {
 
+    var Twister = this._scope;
+    
     var outdatedTimestamp = 0;
     
     if (outdatedLimit) {
@@ -318,7 +340,6 @@ TwisterUser.prototype.doFollowings = function (cbfunc,outdatedLimit ) {
         }
         
     } else {
-        
         
         var currentCounter = 1;
         

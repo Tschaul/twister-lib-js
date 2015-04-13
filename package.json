@@ -1,0 +1,27 @@
+{
+  "name": "twister-lib-js",
+  "version": "0.0.0",
+  "description": "A javascript library for twister (see twister.net.co)",
+  "main": "Twister.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tschaul/twister-lib-js"
+  },
+  "keywords": [
+    "twister",
+    "microblogging",
+    "blockchain",
+    "dht",
+    "torrent"
+  ],
+  "author": "Julian Steinwachs (@tschaul)",
+  "license": "MIT-license",
+  "bugs": {
+    "url": "https://github.com/Tschaul/twister-lib-js/issues"
+  },
+  "homepage": "https://github.com/Tschaul/twister-lib-js",
+  "dependencies": {}
+}

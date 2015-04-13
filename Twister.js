@@ -7,16 +7,66 @@ Twister._cache = {};
 Twister._activeDHTQueries = 0;
 Twister._maxDHTQueries = 5;
 
+Twister._options = {};
 
-Twister.RPC = function (method, params, resultFunc, resultArg, errorFunc, errorArg) {
-    var foo = new $.JsonRpcClient({ 
-        ajaxUrl: "http://twister-proxy.tschaul.com",
-        timeout: 20000
-    });
-    foo.call(method, params,
-        function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },
-        function(ret) { if(typeof errorFunc === "function" && ret != null) errorFunc(ret); }
-    );
+Twister.init = function (options) {
+    
+    Twister._options = options;
+
+}
+
+Twister.RPC = function (method, params, resultFunc, errorFunc) {
+    
+    if ( (typeof $ == "function") && ( typeof $.JsonRpcClient == "function") ) {
+        
+        var foo = new $.JsonRpcClient({ 
+        ajaxUrl: Twister._options.host,
+        timeout: 10000
+        });
+        foo.call(method, params,
+            function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },
+            function(ret) { if(typeof errorFunc === "function" && ret != null) errorFunc(ret); }
+        );
+        
+    } else {
+            
+        var request = require('request');
+        request({
+            uri: Twister._options.host,
+            method: "POST",
+            timeout: 20000,
+            followRedirect: true,
+            maxRedirects: 10,
+            body: '{"jsonrpc": "2.0", "method": "'+method+'", "params": '+JSON.stringify(params)+', "id": 0}'
+        }, function(error, response, body) {
+            
+            if (error) { 
+                
+                console.log(error);
+                
+            } else {
+            
+                var res = JSON.parse(body);
+
+                //console.log(res);
+
+                if (res.error) {
+
+                    errorFunc(res.error);
+
+                } else {
+
+                    resultFunc(res.result);
+
+                }
+                
+            }
+            
+        });
+        
+    }
+      
+      
 }
 
 Twister.dhtget = function (args,cbfunc) {
@@ -38,9 +88,7 @@ Twister.dhtget = function (args,cbfunc) {
         });
         
     } else {
-        
-        //console.log("delayed dht query");
-        
+                
         setTimeout(function(){
         
             Twister.dhtget(args,cbfunc);
@@ -52,21 +100,16 @@ Twister.dhtget = function (args,cbfunc) {
 }
 
 Twister.getUser = function (initval) {
-
+    
     if (Twister._cache[initval] === undefined) {
-            
-        Twister._cache[initval] = new TwisterUser(initval);
+    
+        var TwisterUser = require('./TwisterUser.js');
+        
+        Twister._cache[initval] = new TwisterUser(initval,Twister);
 
     }
     
     return Twister._cache[initval];
-
-}
-
-Twister.getUsers = function (names) {
-
-    var users = new TwisterUsers(names);
-    return users;
 
 }
 
@@ -87,9 +130,11 @@ Twister.deserializeCache = function (flatData) {
 
     for(var i = 0; i < flatData.users.length; i++){
         
-        var newuser = new TwisterUser(flatData.users[i].name);
+        var newuser = new TwisterUser(flatData.users[i].name,Twister);
         newuser.inflate(flatData.users[i]);
         this._cache[flatData.users[i].name]=newuser;
     
     }
 }
+
+module.exports = Twister;
