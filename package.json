@@ -23,5 +23,8 @@
     "url": "https://github.com/Tschaul/twister-lib-js/issues"
   },
   "homepage": "https://github.com/Tschaul/twister-lib-js",
-  "dependencies": {}
+  "dependencies": {},
+  "scripts": {
+    "bundle":"browserify Twister.js --standalone Twister > twister-lib.js"
+  }
 }
