@@ -1,4 +1,6 @@
-Twisterblub = require("./Twister.js")
+// For this to work twisterd must be running at localhost
+
+Twisterblub = require("../Twister.js")
 
 var tschaul = Twisterblub.getUser("tschaul");
 
