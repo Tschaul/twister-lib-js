@@ -27,7 +27,7 @@ TwisterTorrent.prototype.activate =  function (cbfunc) {
             cbfunc(res);        
         }
         
-    },function(ret) {
+    }, function(ret) {
         
         console.log(ret);
         
@@ -47,6 +47,40 @@ TwisterTorrent.prototype.deactivate =  function (cbfunc) {
         
         if (cbfunc) {
             cbfunc(res);        
+        }
+        
+    }, function(ret) {
+        
+        console.log(ret);
+        
+    });
+
+}
+
+TwisterTorrent.prototype._checkActive = function (cbfunc) {
+
+    var Twister = this._scope;
+    
+    var thisTorrent = this;
+
+    Twister.RPC("torrentstatus", [ this._name ], function(res) {
+        
+        if (res==null) { 
+            
+            thisTorrent._active = false ;
+            
+        } else {
+            
+            //console.log("torrent of "+thisTorrent._name+" is active");
+            
+            thisTorrent._active = true ;
+            
+        }
+        
+        if (cbfunc) {
+            
+            cbfunc( thisTorrent._active );  
+            
         }
         
     }, function(ret) {
@@ -78,19 +112,17 @@ TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,maxId,sinceId
 
                 for (var i = 0; i<res.length; i++) {
 
-                    var TwisterPost = require('./TwisterPost.js');
+                    thisUser._verifyAndCachePost(res[i],function(newpost){
                     
-                    var id = res[i].userpost.k;
-                    var newpost = new TwisterPost(res[i].userpost);
-                    thisUser._posts[id]=newpost;
-                    
-                    if (id>thisUser._latestId ) {
-                        
-                        thisUser._latestId = newpost.getId();
-                        thisUser._latestTimestamp = newpost.getTimestamp();
-                        thisUser._lastStatusUpdate = Date.now()/1000;
-                        
-                    }
+                        if (newpost.getId()>thisUser._latestId ) {
+
+                            thisUser._latestId = newpost.getId();
+                            thisUser._latestTimestamp = newpost.getTimestamp();
+                            thisUser._lastStatusUpdate = Date.now()/1000;
+
+                        }
+
+                    });
                         
                 }
 
@@ -98,9 +130,15 @@ TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,maxId,sinceId
 
             } else {
 
-                thisTorrent._active = false ;
-
-                cbfunc(false);
+                thisTorrent._checkActive(function(active){
+                    
+                    if (active) {
+                    
+                        thisUser._lastStatusUpdate = Date.now()/1000;
+                    
+                    }
+                    
+                });
 
             }
 

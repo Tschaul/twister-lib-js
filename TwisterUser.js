@@ -8,6 +8,9 @@ function TwisterUser(name,scope) {
     this._profile = null;
     this._avatar = null;
     this._followings = null;
+    this._pubKey = null;
+    this._pubKeyRequestInProgress = false;
+    this._lastPubKeyUpdate = -1;
     this._lastStatusUpdate = -1;
     this._lastProfileUpdate = -1;
     this._lastAvatarUpdate = -1;
@@ -94,6 +97,111 @@ TwisterUser.prototype.getTorrent = function () {
 
 }
 
+TwisterUser.prototype._doPubKey = function (cbfunc,forceRequest) {
+    
+    var Twister = this._scope;
+
+    var thisUser = this;
+    
+    if (!thisUser._pubKeyRequestInProgress) {
+
+        //console.log(thisUser._pubKey);
+
+        if (thisUser._pubKey) {
+
+            cbfunc(thisUser._pubKey)
+
+        } else {
+
+            thisUser._pubKeyRequestInProgress = true;
+            
+            Twister.RPC("dumppubkey", [ thisUser._name ], function(res) {
+
+                var TwisterCrypto = require('./TwisterCrypto.js');
+
+                //console.log(res);
+
+                thisUser._pubKey = TwisterCrypto.PubKey.fromHex(res);
+
+                if (cbfunc) {
+
+                    cbfunc(thisUser._pubKey);
+
+                }
+                
+                thisUser._pubKeyRequestInProgress = false;
+
+            }, function(ret) {
+
+                thisUser._pubKeyRequestInProgress = false;
+                console.log(ret);
+
+            });   
+
+        }
+
+    } else {
+    
+        setTimeout(function(){
+        
+            thisUser._doPubKey(cbfunc);
+            
+        },200);
+        
+    }
+}
+
+TwisterUser.prototype._verifyAndCachePost =  function (payload,cbfunc) {
+    
+    var Twister = this._scope;
+        
+    var thisUser = this;
+    
+    var newid = payload.userpost.k;
+    var payloadUser = payload.userpost.n;
+
+    //console.log(payloadUser+":post"+newid);
+    
+    if( payloadUser==thisUser.getUsername() && !( newid in thisUser._posts) ) {
+
+        var TwisterPost = require('./TwisterPost.js');
+
+        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisUser._scope);
+
+        thisUser._posts[newpost.getId()] = newpost;
+        
+        if (cbfunc) {
+
+            cbfunc(newpost);
+
+        }
+        
+        thisUser._doPubKey(function(pubkey){
+                    
+            pubkey.messageVerify(payload.userpost,payload.sig_userpost,function(verified){
+
+
+                if (verified) {
+
+
+                    //console.log("post signature successfully verifeid")
+
+
+                } else {
+
+                    //console.log(newpost);
+                    //console.log("WARNING: post signature could not be verified!")
+
+                }
+            });
+
+        });
+        
+
+    }
+
+}
+
 TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
     
     var Twister = this._scope;
@@ -106,7 +214,7 @@ TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
         
     }
     
-    if ( (outdatedLimit !== undefined) && (this._lastStatusUpdate > outdatedTimestamp) ){
+    if ( (outdatedLimit !== undefined) && (this._lastStatusUpdate > outdatedTimestamp) && (thisUser._latestId>0) ){
         
         thisUser.doPost(thisUser._latestId,cbfunc);
 
@@ -121,31 +229,26 @@ TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
                 thisUser.doPost(thisUser._latestId,cbfunc);
                 
             } else {
-                            
-                //console.log("no success " + thisUser._name);
                 
-                Twister.dhtget([thisUser._name, "status", "s"],
-                    function (result) {
-
-                        //console.log(result);
+                Twister.dhtget([thisUser._name, "status", "s"], function (result) {
                     
                         if (result[0]) {
                             
-                            var TwisterPost = require('./TwisterPost.js');
-
-                            var newpost = new TwisterPost(result[0].p.v.userpost,thisUser._scope);
-                            thisUser._latestId = newpost.getId();
-                            thisUser._latestTimestamp = newpost.getTimestamp();
-                            thisUser._posts[thisUser._latestId] = newpost;
-
-                            thisUser._lastStatusUpdate = Date.now()/1000;
-
-                            if (cbfunc) {
+                            thisUser._verifyAndCachePost(result[0].p.v, function(newpost) {
+            
+                                thisUser._latestId = newpost.getId();
+                                thisUser._latestTimestamp = newpost.getTimestamp();
+                                thisUser._lastStatusUpdate = Date.now()/1000;
+                                
                                 cbfunc(newpost);
-                            }
+                                
+                            });
+                            
+                            
                         } else { cbfunc(null) }
 
                     }
+                               
                 );
                 
             }
@@ -203,8 +306,6 @@ TwisterUser.prototype.doPost = function (id,cbfunc) {
 
     var Twister = this._scope;
     
-    //console.log(this._name+":post"+id);
-    
     if (id) {
 
         if (id in this._posts){
@@ -224,17 +325,17 @@ TwisterUser.prototype.doPost = function (id,cbfunc) {
                 } else {
 
                     Twister.dhtget([thisUser._name, "post"+id, "s"],
+                                   
                         function (result) {
 
                             if (result[0]) {
 
-                                var TwisterPost = require('./TwisterPost.js');
+                                thisUser._verifyAndCachePost(result[0].p.v,cbfunc);
                                 
-                                var id = result[0].p.v.userpost.k;
-                                var newpost = new TwisterPost(result[0].p.v.userpost,thisUser._scope);
-                                thisUser._posts[id]=newpost;
-
-                                cbfunc(newpost);
+                            } else {
+                            
+                                cbfunc(null);
+                            
                             }
 
                         }

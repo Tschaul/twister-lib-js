@@ -40,24 +40,12 @@ Twister.RPC = function (method, params, resultFunc, errorFunc) {
             body: '{"jsonrpc": "2.0", "method": "'+method+'", "params": '+JSON.stringify(params)+', "id": 0}'
         }, function(error, response, body) {
             
-            if (error) { 
-                
-                console.log(error);
-                
-            } else {
-            
+            if (error) { console.log(error); } else {
                 var res = JSON.parse(body);
-
-                //console.log(res);
-
                 if (res.error) {
-
                     errorFunc(res.error);
-
                 } else {
-
                     resultFunc(res.result);
-
                 }
                 
             }
@@ -75,11 +63,41 @@ Twister.dhtget = function (args,cbfunc) {
     
         Twister._activeDHTQueries++;
         
-        Twister.RPC("dhtget", args, function(post){
+        Twister.RPC("dhtget", args, function(res){
             
             Twister._activeDHTQueries--;
-            cbfunc(post);
-        
+            
+            if (res[0]) {
+            
+                var signingUser = res[0].sig_user;
+                
+                cbfunc(res);
+
+                console.log(args)
+                
+                Twister.getUser(signingUser)._doPubKey(function(pubkey){
+                    
+                    pubkey.messageVerify(res[0].p,res[0].sig_p,function(verified){
+                    
+
+                        if (verified) {
+                                
+                            
+                            //console.log("DHT resource signature successfully verifeid")
+
+
+                        } else {
+
+                            //cbfunc(res);
+                            console.log("WARNING: DHT resource signature could not be verified!")
+
+                        }
+                    });
+
+                });
+                
+            }
+            
         }, function(ret) {
             
             Twister._activeDHTQueries--;

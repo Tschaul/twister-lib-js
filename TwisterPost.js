@@ -1,8 +1,10 @@
 "use strict";
 
-function TwisterPost(data,scope) {
+function TwisterPost(data,signature,scope) {
     
     this._data = data;
+    this._signature = signature;
+    this._verified = false;
     this._retwists = {};
     this._lastRetwistUpdate = -1;
     this._replies = {};
@@ -178,10 +180,17 @@ TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
     
     if (!Twister.getUser(this._data.rt.n)._posts[id]) {
         
-        var newpost = new TwisterPost(this._data.rt,this._scope);
-        Twister.getUser(this._data.rt.n)._posts[id]=newpost;
+        var payload= {
+            userpost: this._data.rt,
+            sig_userpost: this._data.sig_rt
+        };
+        
+        Twister.getUser(this._data.rt.n)._verifyAndCachePost(payload,cbfunc);
+        
+    } else {
+
+        cbfunc(Twister.getUser(this._data.rt.n)._posts[id]);
         
     }
-
-    cbfunc(Twister.getUser(this._data.rt.n)._posts[id]);
+    
 }
