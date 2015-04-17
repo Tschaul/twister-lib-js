@@ -1,37 +1,90 @@
 'use strict';
 
+var inherits = require('inherits');
+var TwisterResource = require('./TwisterResource.js');
+
 function TwisterTorrent(name,scope) {
     
-    this._name = name;
-    this._active = false;
+    TwisterResource.call(this,name,scope);
     
-    this._scope = scope;
+    this._active = false;
+    this._type = "torrent";
+    this._followingName = null;
+
     
 }
 
+inherits(TwisterTorrent,TwisterResource);
+
 module.exports = TwisterTorrent;
 
-TwisterTorrent.prototype.activate =  function (cbfunc) {
+TwisterTorrent.prototype.flatten = function () {
 
-    var Twister = this._scope;
+    var flatData = TwisterResource.prototype.flatten.call(this);
     
-    var thisTorrent = this;
+    flatData.active = this._active;
+    flatData.followingName = this._followingName;
+
+    return flatData;
     
-    Twister.RPC("follow", [ "guest", [this._name] ], function(res) {
+}
+
+TwisterTorrent.prototype.inflate = function (flatData) {
+
+    TwisterResource.prototype.inflate.call(this,flatData);
+    
+    this._active = flatData.active;
+    this._followingName = flatData.followingName;
+
+}
+
+TwisterTorrent.prototype._do = function (cbfunc) {
+        cbfunc(this._active);
+}
+
+TwisterTorrent.prototype.activate =  function (followingName,cbfunc) {
+
+    if (this._followingName && this._followingName!=followingName) {
+    
+        this.deactivate(function(){
         
-        //console.log(res);
+            this.activate(followingName,cbfunc);
         
-        thisTorrent._active = true ;
+        });
+    
+    } else {
         
-        if (cbfunc) {
-            cbfunc(res);        
+        this._followingName=followingName;
+    
+        var Twister = this._scope;
+
+        var thisTorrent = this;
+
+        if (!thisTorrent._active) {
+
+            thisTorrent.RPC("follow", [ thisTorrent._followingName, [thisTorrent._name] ], function(res) {
+
+                thisTorrent._active = true ;
+
+                if (cbfunc) {
+                    cbfunc(res);        
+                }
+
+            }, function(ret) {
+
+                console.log(ret);
+
+            });
+
+        } else {
+
+            if (cbfunc) {
+                cbfunc();        
+            }
+
         }
         
-    }, function(ret) {
-        
-        console.log(ret);
-        
-    });
+    }
 
 }
 
@@ -41,7 +94,7 @@ TwisterTorrent.prototype.deactivate =  function (cbfunc) {
     
     var thisTorrent = this;
     
-    Twister.RPC("unfollow", [ "guest",[this._name] ], function(res) {
+    thisTorrent.RPC("unfollow", [ thisTorrent._followingName ,[this._name] ], function(res) {
         
         thisTorrent._active = false ;
         
@@ -57,31 +110,31 @@ TwisterTorrent.prototype.deactivate =  function (cbfunc) {
 
 }
 
-TwisterTorrent.prototype._checkActive = function (cbfunc) {
+TwisterTorrent.prototype._queryAndDo = function (cbfunc,outdatedLimit) {
 
     var Twister = this._scope;
     
     var thisTorrent = this;
 
-    Twister.RPC("torrentstatus", [ this._name ], function(res) {
+    thisTorrent.RPC("getfollowing", [ this._followingName ], function(res) {
         
-        if (res==null) { 
+        if (thisTorrent._name in res) { 
             
-            thisTorrent._active = false ;
+            thisTorrent._active = true ;
             
         } else {
             
-            //console.log("torrent of "+thisTorrent._name+" is active");
-            
-            thisTorrent._active = true ;
+            thisTorrent._active = false ;
             
         }
         
         if (cbfunc) {
             
-            cbfunc( thisTorrent._active );  
+            thisTorrent._do(cbfunc);
             
         }
+        
+        thisTorrent._lastUpdate = Date.now()/1000;
         
     }, function(ret) {
         
@@ -91,50 +144,67 @@ TwisterTorrent.prototype._checkActive = function (cbfunc) {
 
 }
 
-TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,maxId,sinceId,cbfunc) {
+TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,usernames,maxId,sinceId,cbfunc) {
 
     var Twister = this._scope;
     
     var thisTorrent = this;
-    var thisUser = Twister.getUser(this._name);
+    var thisStream = Twister.getUser(this._name)._stream;
     
     if (thisTorrent._active) {
     
-        var request = {username: this._name};
-        if (maxId>-1) { request["maxId"]=maxId; }
-        if (sinceId>-1) { request["sinceId"]=sinceId; }
+        var requests = [];
         
-        Twister.RPC("getposts", [ count ,[request] ], function(res) {
-
-            //console.log(res);
+        for (var i = 0; i<usernames.length; i++){
+        
+            var request = {username: usernames[i]};
+            if (maxId>-1) { request["maxId"]=maxId; }
+            if (sinceId>-1) { request["sinceId"]=sinceId; }
+            requests.push(request);
+            
+        }
+        
+        thisStream.RPC("getposts", [ count , requests ], function(res) {
             
             if (res.length>0) {
 
                 for (var i = 0; i<res.length; i++) {
 
-                    thisUser._verifyAndCachePost(res[i],function(newpost){
+                    thisStream = Twister.getUser(res[i].userpost.n)._stream;
                     
-                        if (newpost.getId()>thisUser._latestId ) {
+                    thisStream._verifyAndCachePost(res[i],function(newpost){
+                    
+                        if ( newpost.getId() > thisStream._latestId ) {
 
-                            thisUser._latestId = newpost.getId();
-                            thisUser._latestTimestamp = newpost.getTimestamp();
-                            thisUser._lastStatusUpdate = Date.now()/1000;
+                            thisStream._latestId = newpost.getId();
+                            thisStream._latestTimestamp = newpost.getTimestamp();
+                            thisStream._lastUpdate = Date.now()/1000;
 
                         }
 
                     });
                         
                 }
+                
+                if ( !maxId || maxId==-1 ) {
+                
+                    for (var i = 0; i<usernames.length; i++){
+
+                        Twister.getUser(usernames[i])._stream._lastUpdate = Date.now()/1000;
+
+                    }
+                    
+                }
 
                 cbfunc(true);
 
             } else {
 
-                thisTorrent._checkActive(function(active){
+                thisTorrent._checkQueryAndDo(function(active){
                     
                     if (active) {
                     
-                        thisUser._lastStatusUpdate = Date.now()/1000;
+                        thisStream._lastUpdate = Date.now()/1000;
                     
                     }
                     
@@ -144,13 +214,99 @@ TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,maxId,sinceId
 
         }, function(ret) {
         
-            console.log(ret);
+            thisStream._handleError(ret);
 
         });
     
     } else {
 
-        thisTorrent._active = false ;
+        cbfunc(false);
+
+    }
+    
+}
+
+TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
+
+    var Twister = this._scope;
+    
+    var thisTorrent = this;
+    var thisStream = Twister.getUser(this._name)._stream;
+    
+    if (thisTorrent._active) {
+        
+            
+        for (var username in Twister._cache){
+            if (Twister._cache[username]._stream._torrent._followingName == thisTorrent._followingName) {
+                Twister._cache[username]._stream._updateInProgress = true;
+            }
+        }
+        
+        
+        thisStream.RPC("getlasthave", [ thisTorrent._followingName ], function(res) {
+
+            if (res) {
+                
+                var thisUserIsUpToDate = false;
+                
+                var outdatedUsers =[];
+                
+
+                for (var username in res) {
+
+                    
+                    if (username==thisTorrent._name && res[username]==thisStream._latestId) {
+                                                
+                        thisUserIsUpToDate = true;
+                    
+                    }
+                    
+                    if (res[username]==Twister.getUser(username).getLatestId()) {
+                      
+                        Twister.getUser(username)._stream._lastUpdate=Date.now()/1000;
+                        
+                    } else {
+                        
+                        outdatedUsers.push(username);
+                        
+                    }
+                    
+                        
+                }
+                
+                thisTorrent._fillCacheUsingGetposts(30,outdatedUsers,-1,-1,function(){
+                
+                    cbfunc(true);
+                    
+                    for (var username in Twister._cache){
+                        if (Twister._cache[username]._stream._torrent._followingName == thisTorrent._followingName) {
+                            Twister._cache[username]._stream._updateInProgress = false;
+                        }
+                    }
+                
+                });
+
+            } else {
+            
+                cbfunc(false);
+                
+            }
+            
+            for (var username in Twister._cache){
+                if (Twister._cache[username]._stream._torrent._followingName == thisTorrent._followingName) {
+                    Twister._cache[username]._stream._updateInProgress = false;
+                }
+            }
+
+        }, function(ret) {
+        
+            thisStream._handleError(ret);
+            
+            cbfunc(false);
+
+        });
+    
+    } else {
 
         cbfunc(false);
 
@@ -159,13 +315,26 @@ TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,maxId,sinceId
 }
 
 TwisterTorrent.prototype.updateCache = function (cbfunc) {
-
+    
     var Twister = this._scope;
     
     var thisTorrent = this;
-    var thisUser = Twister.getUser(this._name);
+    var thisStream = Twister.getUser(this._name)._stream;
     
-    thisTorrent._fillCacheUsingGetposts(30,-1,-1,cbfunc);
+    thisTorrent._checkForUpdatesUsingGetLastHave(function(uptodate){
+    
+        if (uptodate) {
+            
+            cbfunc(true);
+            
+        } else {
+            
+            thisTorrent._fillCacheUsingGetposts(30,[thisTorrent._name],-1,-1,cbfunc);
+            
+        }
+        
+    });
+        
 
 }
 
@@ -176,6 +345,6 @@ TwisterTorrent.prototype.fillCache = function (id,cbfunc) {
     var thisTorrent = this;
     var thisUser = Twister.getUser(this._name);
     
-    thisTorrent._fillCacheUsingGetposts(30,id,-1,cbfunc);
+    thisTorrent._fillCacheUsingGetposts(30,[thisTorrent._name],id,-1,cbfunc);
 
 }

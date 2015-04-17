@@ -2,9 +2,10 @@
   "name": "twister-lib-js",
   "version": "0.0.0",
   "description": "A javascript library for twister (see twister.net.co)",
-  "main": "Twister.js",
+  "main": "src/Twister.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "bundle":"browserify src/Twister.js --standalone Twister > twister-lib.js"
   },
   "repository": {
     "type": "git",
@@ -18,13 +19,10 @@
     "torrent"
   ],
   "author": "Julian Steinwachs (@tschaul)",
-  "license": "MIT-license",
+  "license": "MIT-license (./LICENSE)",
   "bugs": {
     "url": "https://github.com/Tschaul/twister-lib-js/issues"
   },
   "homepage": "https://github.com/Tschaul/twister-lib-js",
-  "dependencies": {},
-  "scripts": {
-    "bundle":"browserify Twister.js --standalone Twister > twister-lib.js"
-  }
+  "dependencies": {}
 }

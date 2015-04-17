@@ -1,42 +1,58 @@
 "use strict";
 
+var inherits = require('inherits');
+var TwisterResource = require('./TwisterResource.js');
+var TwisterReplies = require('./TwisterReplies.js');
+var TwisterRetwists = require('./TwisterRetwists.js');
+
 function TwisterPost(data,signature,scope) {
     
-    this._data = data;
-    this._signature = signature;
-    this._verified = false;
-    this._retwists = {};
-    this._lastRetwistUpdate = -1;
-    this._replies = {};
-    this._lastReplyUpdate = -1;
+    var name = data.n;
+    var id = data.k;
     
-    this._scope = scope;
+    TwisterResource.call(this,name,scope);
+    
+    this._type = "post";
+    this._data = data;
+    this._replies = new TwisterReplies(name,id,scope);
+    this._retwists = new TwisterRetwists(name,id,scope);
     
 }
+
+inherits(TwisterPost,TwisterResource);
 
 module.exports = TwisterPost;
 
 TwisterPost.prototype.flatten = function () {
 
-    return {
+    var flatData = TwisterResource.prototype.flatten.call(this);
+    
+    flatData.retwists = this._retwists.flatten();
+    flatData.replies = this._replies.flatten();
         
-        data: this._data,
-        retwists: this._retwists,
-        lastRetwistUpdate: this._lastRetwistUpdate,
-        replies: this._replies,
-        lastReplyUpdate: this._lastReplyUpdate
-        
-    };
+    return flatData;
 
 }
 
 TwisterPost.prototype.inflate = function (flatData) {
     
-    this._replies=flatData.replies;
-    this._lastReplyUpdate=flatData.lastReplyUpdate;
-    this._retwists=flatData.retwists;
-    this._lastRetwistUpdate=flatData.lastRetwistUpdate;
+    TwisterResource.prototype.inflate.call(this,flatData);
+    
+    this._replies.inflate(flatData.replies);
+    this._retwists.inflate(flatData.retwists);
 
+}
+
+TwisterPost.prototype._do = function (cbfunc) {
+    cbfunc(this);
+}
+
+TwisterPost.prototype._checkQueryAndDo = function (cbfunc) {
+    cbfunc(this);
+}
+
+TwisterPost.prototype._queryAndDo = function (cbfunc) {
+    cbfunc(this);
 }
 
 TwisterPost.prototype.getId = function () {
@@ -72,80 +88,11 @@ TwisterPost.prototype.getReplyId = function () {
 }
 
 TwisterPost.prototype.doReplies = function (cbfunc) {
-
-    var Twister = this._scope;
-    
-    var thisPost = this;
-    
-    Twister.dhtget([thisPost.getUsername(), "replies"+thisPost.getId(), "m"],
-                   
-        function (result) {
-
-            for (i=0; i<result.length; i++) {
-        
-                var username = result[i].p.v.userpost.n;
-                var id = result[i].p.v.userpost.k;
-                
-                thisPost._replies[username+":post"+id]=true;
-                
-                var newpost = new TwisterPost(result[i].p.v.userpost,thisPost._scope);
-                Twister.getUser(username)._posts[id]=newpost;
-                
-            }
-        
-            for (var key in thisPost._replies) {
-                
-                var nandk = key.split(":post");
-                var username = nandk[0];
-                var id = parseInt(nandk[1]);
-                Twister.getUser(username).doPost(id,cbfunc);
-            
-            }
-
-        }
-    );   
-    
-    
+    this._replies._checkQueryAndDo(cbfunc);  
 }
 
-TwisterPost.prototype.doHeadOfConversation = function (cbfunc) {
-
-    var Twister = this._scope;
-    
-    var goUpConversation = function (post) {
-        
-        if (post.isReply()) {
-            
-            Twister.getUser(post.getReplyUser()).doPost(post.getReplyId(),goUpConversation);
-            
-        } else {
-            
-            cbfunc(post);
-            
-        }
-    }
-    
-    goUpConversation(this);
-
-}
-
-TwisterPost.prototype.doConversation = function (cbfunc) {
-    
-    
-    var doReplyRecursive = function (post) {
-        
-        cbfunc(post);
-        post.doReplies(doReplyRecursive);
-    
-    }
-    
-    this.doHeadOfConversation(function(post){
-        
-        cbfunc(post);
-        post.doReplies(doReplyRecursive);
-        
-    });
-
+TwisterPost.prototype.doPostRepliedTo = function (cbfunc) {
+    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc);
 }
 
 TwisterPost.prototype.isRetwist = function () {
@@ -170,6 +117,10 @@ TwisterPost.prototype.getRetwistedContent = function () {
 
 TwisterPost.prototype.getRetwistedUser = function () {
     return this._data.rt.n;
+}
+
+TwisterPost.prototype.doRetwistingPosts = function (cbfunc) {
+    this._retwists._checkQueryAndDo(cbfunc);
 }
 
 TwisterPost.prototype.doRetwistedPost = function (cbfunc) {

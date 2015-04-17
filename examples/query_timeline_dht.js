@@ -1,6 +1,6 @@
 // For this to work twisterd must be running at localhost
 
-Twisterblub = require("../Twister.js")
+Twisterblub = require("../src/Twister.js")
 
 var tschaul = Twisterblub.getUser("tschaul");
 
@@ -10,7 +10,7 @@ Twisterblub.init({
 
 tschaul.doFollowings(function(following){
     
-    Twisterblub.getUser(following).doPostsSince(Date.now()/1000 - 24*60*60,function(post){
+    Twisterblub.getUser(following.getUsername()).doPostsSince(Date.now()/1000 - 24*60*60,function(post){
         
         console.log(post.getContent());
         
