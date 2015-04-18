@@ -8,6 +8,7 @@ TwisterTrendingHashtags = function (count,scope) {
     
     this._count = count;
     this._data =  null;
+	this._hasParentUser = false;
 
     TwisterResource.call(this,name,scope);   
     

@@ -2,9 +2,8 @@
 A [Twister](http://twister.net.co) Library in JavaScript
 
 ## Scope of this Project
-*Disclaimer: None of the following functions are implemented at the moment.*
 
-twister-lib-js handles all querying and manipulation of the Twister P2P network, given the availability of a (public) twisterd service API endpoint. This includes managing the network resource, by bundleing queries in batches and also by caching. This also includes the ability to encrypt and decrypt direct messages locally.
+twister-lib-js handles all querying and manipulation of the Twister P2P network, given the availability of a (remote or local) twisterd service API endpoint. This includes managing the network resource, by bundleing queries and by caching. This also includes the ability sign posts and to encrypt and decrypt direct messages locally.
 
 twister-lib-js should be compilable for as many platforms as possible including:
 - All popular Browsers (for web apps as well as firefoxOS)
@@ -14,7 +13,22 @@ twister-lib-js should be compilable for as many platforms as possible including:
 
 A techdemo of twister-lib-js combined with react-js can be found at http://github.com/Tschaul/twister-react
 
-## Example code
+## Implementation Status
+
+| Resource    	| query | signature verification    | post (client side wallet) | post (server side wallet) |
+|-|-|-|-|-|
+| Posts     	| ✓     | *hit and miss*            |                           |							|
+| Replies     	| ✓     | *hit and miss*            |                           |							|
+| Retwists     	| ✓     | *hit and miss*            |                           |							|
+| Profile     	| ✓     | *hit and miss*            |                           |	✓						|
+| Avatar     	| ✓     | *hit and miss*            |                           |	✓						|
+| Mentions     	| ✓     | *hit and miss*            |                           |							|
+| Hashtags     	| ✓     | *hit and miss*            |                           |							|
+| Promoted Posts|  ✓    | *hit and miss*            |                           |							|
+| Direct Messages| server side wallet    |                           |                           |							|| 
+
+
+## Code Examples
 
 Display the content of the latest post of user tschaul:
 ```

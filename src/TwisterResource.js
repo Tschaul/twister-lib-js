@@ -5,10 +5,13 @@ function TwisterResource (name,scope) {
     this._type = "none";
     this._scope = scope;
     this._name = name;
+	this._hasParentUser = true;
+	
     this._data = null;
     this._verified = false;
     this._lastUpdate = -1;
     this._querySettings = {};
+	this._revisionNumber = null;
     
     this._updateInProgress = false;
     this._activeQuerySettings = {};
@@ -21,6 +24,9 @@ TwisterResource.prototype.flatten = function () {
 
     return { 
         lastUpdate: this._lastUpdate,
+        verified: this._verified,
+        querySettings: this._querySettings,
+        revisionNumber: this._revisionNumber,
         name: this._name,
         data: this._data
     };
@@ -30,6 +36,9 @@ TwisterResource.prototype.flatten = function () {
 TwisterResource.prototype.inflate = function (flatData) {
     
     this._lastUpdate = flatData.lastUpdate;
+	this.verified = flatData.verified;
+	this.querySettings = flatData.querySettings;
+	this.revisionNumber = flatData.revisionNumber;
     this._name = flatData.name;
     this._data = flatData.data;
 
@@ -69,7 +78,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
             
             thisResource._queryAndDo(function(newresource){
                 
-                newresource._do(cbfunc);
+                thisResource._do(cbfunc);
                 
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
@@ -92,6 +101,8 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
 
 TwisterResource.prototype.getQuerySetting = function (setting) {
 
+	//console.log(this._name);
+	
     var Twister = this._scope;
     
     if (setting in this._activeQuerySettings) {
@@ -106,7 +117,7 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
         return Twister._querySettingsByType[setting];
     }
     
-    if (setting in Twister.getUser(this._name)._querySettings) {
+    if (this._hasParentUser && setting in Twister.getUser(this._name)._querySettings) {
         return Twister.getUser(this._name)._querySettings[setting];
     }
     
@@ -127,7 +138,7 @@ TwisterResource.prototype.setQuerySetting = function (setting,value) {
 TwisterResource.prototype._handleError = function (error) {
     
     this._updateInProgress = false;
-
+	
     this.getQuerySetting("errorfunc").call(this,error);
     
 }
@@ -135,6 +146,8 @@ TwisterResource.prototype._handleError = function (error) {
 TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc) {
     
     
+	//console.log("rpc by "+this._name+" : "+method+" "+JSON.stringify(this._activeQuerySettings))
+	
     if ( (typeof $ == "function") && ( typeof $.JsonRpcClient == "function") ) {
         
         var foo = new $.JsonRpcClient({ 
@@ -208,7 +221,7 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 
                             } else {
 
-                                console.log("WARNING: DHT resource signature could not be verified!")
+                                console.log("DHT resource signature could not be verified")
 
                             }
 

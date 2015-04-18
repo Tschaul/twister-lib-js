@@ -144,14 +144,11 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
                 if (verified) {
 
-
-                    //console.log("post signature successfully verifeid")
-
+					thisResource._verified=true;
 
                 } else {
 
-                    //console.log(newpost);
-                    //console.log("WARNING: post signature could not be verified!")
+                    thisResource._handleError({message:"signature of post could not be verified"});
 
                 }
                 

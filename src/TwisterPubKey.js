@@ -43,10 +43,8 @@ TwisterPubKey.prototype.inflate = function (flatData) {
 }
 
 TwisterPubKey.prototype._queryAndDo = function (cbfunc) {
-
+	
     var thisResource = this;
-    
-    thisResource._updateInProgress = true;
             
     thisResource.RPC("dumppubkey", [ thisResource._name ], function(res) {
 
@@ -63,9 +61,7 @@ TwisterPubKey.prototype._queryAndDo = function (cbfunc) {
             cbfunc(thisResource);
 
         }
-
-        thisResource._updateInProgress = false;
-
+		
     }, function(ret) {
 
         thisResource._handleError(ret);
@@ -108,7 +104,15 @@ TwisterPubKey.prototype.verifySignature = function (message, signature, cbfunc) 
                 signature = new Buffer(signature, 'hex')
             }
 
-            var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
+			try {
+				
+            	var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
+				
+			} catch(e) {
+				
+				var retVal = false;	
+				
+			}
 
             var compTime = Date.now()-startTime;
 

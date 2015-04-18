@@ -60,7 +60,13 @@ TwisterPost.prototype.getId = function () {
 }
 
 TwisterPost.prototype.getlastId = function () {
-    return this._data.lastk;
+    if (this._data.lastk) {
+		return this._data.lastk;
+	} else if (this._data.k>0) {
+		return this._data.k-1;
+	} else {
+		return -1;
+	}
 }
 
 TwisterPost.prototype.getTimestamp = function () {

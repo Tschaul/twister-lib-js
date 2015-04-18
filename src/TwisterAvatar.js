@@ -33,10 +33,18 @@ TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
             if (result[0]) {
 
                 thisResource._data=result[0].p.v;
+                thisResource._revisionNumber=result[0].p.seq;
                 thisResource._lastUpdate=Date.now()/1000;
                 cbfunc(thisResource);
 
-            }
+            } else {
+			
+				
+                thisResource._revisionNumber=0;
+                thisResource._lastUpdate=Date.now()/1000;
+                cbfunc(thisResource);
+			
+			}
 
         }
 

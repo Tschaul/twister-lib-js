@@ -7,6 +7,7 @@ TwisterHashtag = function (name,scope) {
     TwisterResource.call(this,name,scope);
     this._type = "hashtag";
     this._data = {};
+	this._hasParentUser = false;
     
 }
 

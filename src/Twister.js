@@ -1,9 +1,16 @@
 'use strict';
 
-var Twister = {};
+
+var TwisterResource = require("./TwisterResource.js");
+var Twister = new TwisterResource("twister",{});
+
+Twister._scope = Twister;
+Twister._type = "twister";
+Twister._hasParentUser = false;
 
 Twister._cache = {};
 Twister._hashtags = {};
+Twister._wallet = {};
 
 Twister._activeDHTQueries = 0;
 Twister._maxDHTQueries = 5;
@@ -11,7 +18,6 @@ Twister._maxDHTQueries = 5;
 Twister._verifySignatures = true;
 Twister._averageSignatureCompTime = 200;
 Twister._signatureVerificationsInProgress = 0;
-
 
 //default query settings:
 Twister._outdatedLimit = 90;
@@ -27,10 +33,13 @@ Twister._querySettingsByType = {
 };
 Twister._host = "";
 Twister._timeout = 20000;
-Twister._errorFunc = function(error){console.log("Twister error: "+error.message);};
+Twister._errorfunc = function(error){console.log("Twister error: "+error.message);};
 
 var TwisterTrendingHashtags = require("./TwisterTrendingHashtags.js");
 Twister._trendingHashtags = new TwisterTrendingHashtags(10,Twister);
+
+var TwisterPromotedPosts = require("./TwisterPromotedPosts.js");
+Twister._promotedPosts = new TwisterPromotedPosts(Twister);
 
 Twister.init = function (options) {
     
@@ -78,6 +87,56 @@ Twister.doTrendingHashtags = function (count,cbfunc) {
     
     Twister._trendingHashtags._checkQueryAndDo(cbfunc);
     
+}
+
+Twister.getPromotedPosts = function() {
+	return Twister._promotedPosts;
+}
+
+Twister.getAccount = function (name) {
+	
+	if(name=="guest" && !("guest" in Twister._wallet) ) {
+	
+		var TwisterAccount = require('./TwisterAccount.js');
+        
+        Twister._wallet["guest"] = new TwisterAccount("guest",Twister);
+		
+	}
+	
+	return Twister._wallet[name];
+}
+
+Twister.loadServerAccounts = function (cbfunc) {
+	
+	Twister.RPC("listwalletusers", [], function(res){
+	
+		var TwisterAccount = require('./TwisterAccount.js');
+		
+		if (res.length) {
+		
+			for (var i=0; i<res.length; i++) {
+			
+				if (!(res[i] in Twister._wallet)) {
+					Twister._wallet[res[i]] = new TwisterAccount(res[i],Twister);
+				}
+			
+			}
+			
+		
+		} else {
+		
+			Twister._handleError({message:"no wallet users found on the server."})
+		
+		}
+		
+		cbfunc(res)
+
+	},  function(res){
+
+		Twister._handleError(res);
+
+	});
+
 }
 
 Twister.serializeCache = function () {

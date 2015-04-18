@@ -14,6 +14,7 @@ function TwisterUser(name,scope) {
     
     this._type = "user";
     this._querySettings = {};
+	this._hasParentUser = false;
 
     this._profile = new TwisterProfile(name,scope);
     this._avatar = new TwisterAvatar(name,scope);
@@ -22,7 +23,6 @@ function TwisterUser(name,scope) {
     this._stream = new TwisterStream(name,scope);
     this._mentions = new TwisterMentions(name,scope);
 
-    
 }
 
 module.exports = TwisterUser;
@@ -71,74 +71,29 @@ TwisterUser.prototype.getTorrent = function () {
     return this._stream._torrent;
 }
 
-TwisterUser.prototype._doPubKey = function (cbfunc, outdatedLimit) {
-    this._pubkey._checkQueryAndDo(cbfunc,outdatedLimit);
+TwisterUser.prototype._doPubKey = function (cbfunc, querySettings) {
+    this._pubkey._checkQueryAndDo(cbfunc, querySettings);
 }
 
-TwisterUser.prototype.doProfile = function (cbfunc, outdatedLimit) {
-    this._profile._checkQueryAndDo(cbfunc,outdatedLimit);
+TwisterUser.prototype.doProfile = function (cbfunc, querySettings) {
+    this._profile._checkQueryAndDo(cbfunc, querySettings);
 };
 
-TwisterUser.prototype.doAvatar = function (cbfunc, outdatedLimit) {
-    this._avatar._checkQueryAndDo(cbfunc,outdatedLimit);
+TwisterUser.prototype.doAvatar = function (cbfunc, querySettings) {
+    this._avatar._checkQueryAndDo(cbfunc, querySettings);
 };
 
-TwisterUser.prototype.doFollowings = function (cbfunc, outdatedLimit) {
-    this._followings._checkQueryAndDo(cbfunc, outdatedLimit);
+TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
+    this._followings._checkQueryAndDo(cbfunc, querySettings);
 };
 
-TwisterUser.prototype.doStatus = function (cbfunc, outdatedLimit) {
-    this._stream._checkQueryAndDo(cbfunc, outdatedLimit);
+TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
+    this._stream._checkQueryAndDo(cbfunc, querySettings);
 };
 
 TwisterUser.prototype.doPost = function (id, cbfunc) {
     this._stream._doPost(id, cbfunc);
 }
-
-TwisterUser.prototype.doPostsSince = function (timestamp, cbfunc, outdatedLimit) {
-    
-    var thisUser = this;
-    
-    if (timestamp <= 0) { timestamp = timestamp + Date.now()/1000; }
-    
-    var doPostTilTimestamp = function (post) {
-        
-        if (post!==null && ( post.getTimestamp() > timestamp ) ) {
-            
-            cbfunc(post);
-            thisUser.doPost(post.getlastId(), doPostTilTimestamp);
-            
-        }
-        
-    };
-        
-    this.doStatus(doPostTilTimestamp, outdatedLimit);
-    
-};
-
-TwisterUser.prototype.doLatestPosts = function (count, cbfunc, outdatedLimit) {
-    
-    var thisUser = this;
-    
-    var countSoFar = 0;
-    
-    var doPostTilCount = function (post) {
-        
-        if (countSoFar < count) {
-            
-            cbfunc(post);
-            countSoFar=countSoFar+1;
-            thisUser.doPost(post.getlastId(), doPostTilCount);
-            
-        }
-        
-    };
-      
-    var outdatedTimestamp = 0;
-    
-    this.doStatus(doPostTilCount, outdatedLimit);
-    
-};
 
 TwisterUser.prototype.doMentions = function (cbfunc) {
 

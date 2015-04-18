@@ -110,7 +110,37 @@ TwisterTorrent.prototype.deactivate =  function (cbfunc) {
 
 }
 
-TwisterTorrent.prototype._queryAndDo = function (cbfunc,outdatedLimit) {
+TwisterTorrent.prototype.getQuerySetting = function (setting) {
+
+	//console.log(this._name);
+	
+    var Twister = this._scope;
+    
+    if (setting in this._activeQuerySettings) {
+        return this._activeQuerySettings[setting];
+    }
+    
+    if (setting in this._querySettings) {
+        return this._querySettings[setting];
+    }
+    
+    if (setting in Twister.getAccount(this._followingName)._querySettings) {
+        return Twister.getAccount(this._followingName)._querySettings[setting];
+    }
+	
+    if (setting in Twister.getUser(this._name)._stream._activeQuerySettings) {
+        return Twister.getUser(this._name)._stream._activeQuerySettings[setting];
+    }
+	
+    if (setting in Twister.getUser(this._name)._stream._querySettings) {
+        return Twister.getUser(this._name)._stream._querySettings[setting];
+    }
+	
+	return TwisterResource.prototype.getQuerySetting.call(this,setting);
+
+}
+
+TwisterTorrent.prototype._queryAndDo = function (cbfunc) {
 
     var Twister = this._scope;
     
@@ -138,7 +168,7 @@ TwisterTorrent.prototype._queryAndDo = function (cbfunc,outdatedLimit) {
         
     }, function(ret) {
         
-        console.log(ret);
+        thisTorrent._handleError(ret);
         
     });
 
@@ -164,7 +194,7 @@ TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,usernames,max
             
         }
         
-        thisStream.RPC("getposts", [ count , requests ], function(res) {
+        thisTorrent.RPC("getposts", [ count , requests ], function(res) {
             
             if (res.length>0) {
 
@@ -177,7 +207,6 @@ TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,usernames,max
                         if ( newpost.getId() > thisStream._latestId ) {
 
                             thisStream._latestId = newpost.getId();
-                            thisStream._latestTimestamp = newpost.getTimestamp();
                             thisStream._lastUpdate = Date.now()/1000;
 
                         }
@@ -243,7 +272,7 @@ TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
         }
         
         
-        thisStream.RPC("getlasthave", [ thisTorrent._followingName ], function(res) {
+        thisTorrent.RPC("getlasthave", [ thisTorrent._followingName ], function(res) {
 
             if (res) {
                 
