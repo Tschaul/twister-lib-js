@@ -126,29 +126,36 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
         
         }
         
-        if (cbfunc) {
+        if (cbfunc && signatureVerification=="none") {
             
             cbfunc(newpost);
 
-        }
+        } else {
         
-        Twister.getUser(newpost.getUsername())._doPubKey(function(pubkey){
-                    
-            pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
+			if (signatureVerification=="background") { cbfunc(newpost); }
+			
+			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
 
-                if (verified) {
+				pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
 
-					thisResource._verified=true;
 
-                } else {
+					if (verified) {
 
-                    thisResource._handleError({message:"signature of promoted post could not be verified"});
+						thisResource._verified=true;
 
-                }
-                
-            });
+						if (signatureVerification=="instant") { cbfunc(newpost); }
 
-        });
+					} else {
+
+						thisResource._handleError({message:"signature of post could not be verified"});
+
+					}
+
+				});
+
+			});
+				
+		}
         
     }
 

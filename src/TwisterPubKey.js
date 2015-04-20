@@ -80,14 +80,21 @@ TwisterPubKey.prototype.getKey = function () {
     
 }
 
+TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, cbfunc) {
 
-
-TwisterPubKey.prototype.verifySignature = function (message, signature, cbfunc) {
-
+	var signature = JSON.parse(JSON.stringify(signature_ori));
+	
+	var message = JSON.parse(JSON.stringify(message_ori));
 	
 	if ("v" in message && "sig_userpost" in message.v) {
 	
 		message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
+		
+	}
+	
+	if ("v" in message && "userpost" in message.v && "sig_rt" in message.v.userpost) {
+	
+		message.v.userpost.sig_rt = new Buffer(message.v.userpost.sig_rt, 'hex');
 		
 	}
 	
@@ -97,46 +104,46 @@ TwisterPubKey.prototype.verifySignature = function (message, signature, cbfunc) 
 		
 	}
 	
+	//console.log("verifying message")
+	
     var Twister = this._scope;
     
-    if (Twister._verifySignatures) {
-    
-        thisPubKey=this._btcKey;
+	var thisPubKey=this._btcKey;
 
-        Twister._signatureVerificationsInProgress++;
+	Twister._signatureVerificationsInProgress++;
 
-        var timeout=Twister._signatureVerificationsInProgress*Twister._averageSignatureCompTime*2;
+	var timeout=Twister._signatureVerificationsInProgress*Twister._averageSignatureCompTime*2;
+	
+	setTimeout(function(){
 
+		Twister._signatureVerificationsInProgress--;
 
-        setTimeout(function(){
+		var startTime = Date.now();
 
-            Twister._signatureVerificationsInProgress--;
+		message = bencode.encode(message);
 
-            var startTime = Date.now();
+		signature = new Buffer(signature, 'hex');
 
-            message = bencode.encode(message);
+		try {
 
-            signature = new Buffer(signature, 'hex');
+			var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
 
-			try {
-				
-            	var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
-				
-			} catch(e) {
-				
-				var retVal = false;	
-				
-			}
+		} catch(e) {
 
-            var compTime = Date.now()-startTime;
+			var retVal = false;	
+			
+			console.log(message);
 
-            Twister._averageSignatureCompTime = 0.9*Twister._averageSignatureCompTime + 0.1*compTime;
+		}
 
-            cbfunc(retVal)
+		var compTime = Date.now()-startTime;
 
-        },timeout);
+		Twister._averageSignatureCompTime = 0.9*Twister._averageSignatureCompTime + 0.1*compTime;
+
+		cbfunc(retVal)
+
+	},timeout);
         
-    }
     
 
 }

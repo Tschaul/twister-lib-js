@@ -170,7 +170,7 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
 	
 	}
     
-	this._activeQuerySettings["methods"]=method;
+	this._activeQuerySettings["method"]=method;
 	this._activeQuerySettings["params"]=params;
 	
 	//console.log("rpc by "+this._name+" : "+method+" "+JSON.stringify(this._activeQuerySettings))
@@ -235,12 +235,15 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
             Twister._activeDHTQueries--;
             
             if (res[0]) {
-            
+				
+				var signatureVerification = thisResource.getQuerySetting("signatureVerification");
+				
                 var signingUser = res[0].sig_user;
                 
-                if (args[2]="m" || (args[0]==signingUser) ) {
+                if (signatureVerification!="none" 
+					&& (args[2]="m" || (args[0]==signingUser) ) ) {
                 
-                    cbfunc(res);
+                    if (signatureVerification=="background") { cbfunc(res); }
 
                     Twister.getUser(signingUser)._doPubKey(function(pubkey){
 
@@ -250,8 +253,9 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                             if (verified) {
 
                                 thisResource._verified = true;
-
-
+								
+								if (signatureVerification=="instant") { cbfunc(res); }
+								
                             } else {
 
                                 thisResource._handleError({message: "DHT resource signature could not be verified"})
@@ -262,7 +266,7 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 
                     });
                     
-                }
+                } else { cbfunc(res); }
                 
             }
             

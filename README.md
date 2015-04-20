@@ -15,17 +15,17 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 
 ## Implementation Status
 
-| Resource    	| query | signature verification    | post (client side wallet) | post (server side wallet) |
-|-|-|-|-|-|
-| Posts     	| ✓     | ✓ (DHT signature fails)            |                           |							|
-| Replies     	| ✓     | ✓            |                           |							|
-| Retwists     	| ✓     | *fails*            |                           |							|
-| Profile     	| ✓     | ✓            |                           |	✓						|
-| Avatar     	| ✓     | ✓            |                           |	✓						|
-| Mentions     	| ✓     | -            |                           |							|
-| Hashtags     	| ✓     | -            |                           |							|
-| Promoted Posts|  ✓    | -            |                           |							|
-| Direct Messages| server side wallet    |                           |                           |							|| 
+| Resource    	| query |  post (client side wallet) | post (server side wallet) |
+|-|-|-|-|
+| Posts     	| ✓     |                            |							|
+| Replies     	| ✓     |                            |							|
+| Retwists     	| ✓     |                            |							|
+| Profile     	| ✓     |                            |	✓						|
+| Avatar     	| ✓     |                            |	✓						|
+| Mentions     	| ✓     |                            |	-						|
+| Hashtags     	| ✓     |                            |	-						|
+| Promoted Posts|  ✓    |  -                         |	-						|
+| Direct Messages| -    |                            |	✓						|| 
 
 
 ## Code Examples

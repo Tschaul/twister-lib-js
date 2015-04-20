@@ -13,6 +13,7 @@ TwisterStream = function (name,scope) {
     
     this._latestId = -1;
     this._posts = {};
+    this._verified = true; //post are verified individually
     
     this._torrent = new TwisterTorrent(name,scope);
     
@@ -52,9 +53,13 @@ TwisterStream.prototype.inflate = function (flatData) {
     
     for(var i = 0; i < flatData.posts.length; i++){
         
-        var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
-        newpost.inflate(flatData.posts[i]);
-        this._posts[newpost.getId()]=newpost;
+		if (flatData.posts[i].verified) {
+		
+			var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
+			newpost.inflate(flatData.posts[i]);
+			this._posts[newpost.getId()]=newpost;
+			
+		}
     
     }
     
@@ -121,6 +126,8 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
     
     if( payloadUser==thisResource._name && !( newid in thisResource._posts) ) {
 
+		var signatureVerification = thisResource.getQuerySetting("signatureVerification");
+		
         var TwisterPost = require('./TwisterPost.js');
 
         var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
@@ -133,34 +140,37 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
         
         }
         
-        if (cbfunc) {
-
-            //console.log(newpost.getContent())
+        if (cbfunc && signatureVerification=="none") {
             
             cbfunc(newpost);
 
-        }
+        } else {
         
-        Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
-                    
-            pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
+			if (cbfunc && signatureVerification=="background") { cbfunc(newpost); }
+			
+			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
+
+				pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
 
 
-                if (verified) {
+					if (verified) {
 
-					thisResource._verified=true;
+						thisResource._verified=true;
 
-                } else {
+						if (cbfunc && signatureVerification=="instant") { cbfunc(newpost); }
 
-                    thisResource._handleError({message:"signature of post could not be verified"});
+					} else {
 
-                }
-                
-            });
+						thisResource._handleError({message:"signature of post could not be verified"});
 
-        });
-        
+					}
 
+				});
+
+			});
+				
+		}
+ 
     }
 
 }

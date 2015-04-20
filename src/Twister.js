@@ -20,7 +20,7 @@ Twister._wallet = {};
 Twister._activeDHTQueries = 0;
 Twister._maxDHTQueries = 5;
 
-Twister._verifySignatures = true;
+Twister._signatureVerification = "background";
 Twister._averageSignatureCompTime = 200;
 Twister._signatureVerificationsInProgress = 0;
 
@@ -54,12 +54,12 @@ Twister._promotedPosts = new TwisterPromotedPosts(Twister);
  */
 Twister.init = function (options) {
 
-	var availableOptions = ["host","timeout","errorfunc","verifySignatures","querySettingsByType","maxDHTQueries"];
+	var availableOptions = ["host","timeout","errorfunc","signatureVerification","querySettingsByType","maxDHTQueries"];
 	
 	for (var key in options) {
 		
 		if (availableOptions.indexOf(key)>-1) {
-	
+			
     		Twister["_"+key] = options[key];
 			
 		}
