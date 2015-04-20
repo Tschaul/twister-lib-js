@@ -116,7 +116,6 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
     setTimeout(function(){
 
-        Twister._signatureVerificationsInProgress--;
 
         var startTime = Date.now();
 
@@ -139,6 +138,8 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
         var compTime = Date.now()-startTime;
 
         Twister._averageSignatureCompTime = 0.9*Twister._averageSignatureCompTime + 0.1*compTime;
+        
+        Twister._signatureVerificationsInProgress--;
 
         cbfunc(retVal)
 
