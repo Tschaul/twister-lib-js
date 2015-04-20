@@ -82,68 +82,68 @@ TwisterPubKey.prototype.getKey = function () {
 
 TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, cbfunc) {
 
-	var signature = JSON.parse(JSON.stringify(signature_ori));
-	
-	var message = JSON.parse(JSON.stringify(message_ori));
-	
-	if ("v" in message && "sig_userpost" in message.v) {
-	
-		message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
-		
-	}
-	
-	if ("v" in message && "userpost" in message.v && "sig_rt" in message.v.userpost) {
-	
-		message.v.userpost.sig_rt = new Buffer(message.v.userpost.sig_rt, 'hex');
-		
-	}
-	
-	if ("sig_rt" in message) {
-	
-		message.sig_rt = new Buffer(message.sig_rt, 'hex');
-		
-	}
-	
-	//console.log("verifying message")
-	
+    var signature = JSON.parse(JSON.stringify(signature_ori));
+
+    var message = JSON.parse(JSON.stringify(message_ori));
+
+    if ("v" in message && "sig_userpost" in message.v) {
+
+        message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
+
+    }
+
+    if ("v" in message && "userpost" in message.v && "sig_rt" in message.v.userpost) {
+
+        message.v.userpost.sig_rt = new Buffer(message.v.userpost.sig_rt, 'hex');
+
+    }
+
+    if ("sig_rt" in message) {
+
+        message.sig_rt = new Buffer(message.sig_rt, 'hex');
+
+    }
+
+    //console.log("verifying message")
+
     var Twister = this._scope;
-    
-	var thisPubKey=this._btcKey;
 
-	Twister._signatureVerificationsInProgress++;
+    var thisPubKey=this._btcKey;
 
-	var timeout=Twister._signatureVerificationsInProgress*Twister._averageSignatureCompTime*2;
-	
-	setTimeout(function(){
+    Twister._signatureVerificationsInProgress++;
 
-		Twister._signatureVerificationsInProgress--;
+    var timeout=Twister._signatureVerificationsInProgress*Twister._averageSignatureCompTime*2;
 
-		var startTime = Date.now();
+    setTimeout(function(){
 
-		message = bencode.encode(message);
+        Twister._signatureVerificationsInProgress--;
 
-		signature = new Buffer(signature, 'hex');
+        var startTime = Date.now();
 
-		try {
+        message = bencode.encode(message);
 
-			var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
+        signature = new Buffer(signature, 'hex');
 
-		} catch(e) {
+        try {
 
-			var retVal = false;	
-			
-			console.log(message);
+            var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
 
-		}
+        } catch(e) {
 
-		var compTime = Date.now()-startTime;
+            var retVal = false;	
 
-		Twister._averageSignatureCompTime = 0.9*Twister._averageSignatureCompTime + 0.1*compTime;
+            console.log(message);
 
-		cbfunc(retVal)
+        }
 
-	},timeout);
-        
-    
+        var compTime = Date.now()-startTime;
+
+        Twister._averageSignatureCompTime = 0.9*Twister._averageSignatureCompTime + 0.1*compTime;
+
+        cbfunc(retVal)
+
+    },timeout);
+
+
 
 }
