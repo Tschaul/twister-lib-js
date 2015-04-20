@@ -1,5 +1,9 @@
 "use strict";
 
+/**
+ * General resource class. Inherited by all objects inside twister-lib-js.
+ * @class
+ */
 function TwisterResource (name,scope) {
 
     this._type = "none";
@@ -41,6 +45,8 @@ TwisterResource.prototype.inflate = function (flatData) {
 	this.revisionNumber = flatData.revisionNumber;
     this._name = flatData.name;
     this._data = flatData.data;
+	
+	if (!this.verified) {this._lastUpdate=-1;}
 
 }
 
@@ -50,6 +56,12 @@ TwisterResource.prototype._do =  function (cbfunc) {
 
 }
 
+/**
+ * Checks whether cached resource is outdated and invokes an update if needed. Call cbfunc on the resource when done.
+ * @function
+ * @param {function} cbfunc callback function
+ * @param {Object} querySettings
+ */
 TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
     
     if (!querySettings) {querySettings={};}
@@ -99,6 +111,11 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
 
 } 
 
+/**
+ * Retrieve currently set query setting.
+ * @function
+ * @param {string} settings
+ */
 TwisterResource.prototype.getQuerySetting = function (setting) {
 
 	//console.log(this._name);
@@ -145,7 +162,17 @@ TwisterResource.prototype._handleError = function (error) {
 
 TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc) {
     
+	var thisResource = this;
+	
+	if (typeof errorFunc != "function") {
+	
+		thisResource._activeQuerySettings = errorFunc;
+	
+	}
     
+	this._activeQuerySettings["methods"]=method;
+	this._activeQuerySettings["params"]=params;
+	
 	//console.log("rpc by "+this._name+" : "+method+" "+JSON.stringify(this._activeQuerySettings))
 	
     if ( (typeof $ == "function") && ( typeof $.JsonRpcClient == "function") ) {
@@ -171,10 +198,16 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
             body: '{"jsonrpc": "2.0", "method": "'+method+'", "params": '+JSON.stringify(params)+', "id": 0}'
         }, function(error, response, body) {
             
-            if (error) { console.log(error); } else {
+            if (error) { 
+				
+				error.message = "Host not reachable (http error).";
+				
+				thisResource._handleError(error)
+			
+			} else {
                 var res = JSON.parse(body);
                 if (res.error) {
-                    errorFunc(res.error);
+                    thisResource._handleError(res.error);
                 } else {
                     resultFunc(res.result);
                 }
@@ -221,7 +254,7 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 
                             } else {
 
-                                console.log("DHT resource signature could not be verified")
+                                thisResource._handleError({message: "DHT resource signature could not be verified"})
 
                             }
 

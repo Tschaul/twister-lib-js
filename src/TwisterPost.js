@@ -5,6 +5,10 @@ var TwisterResource = require('./TwisterResource.js');
 var TwisterReplies = require('./TwisterReplies.js');
 var TwisterRetwists = require('./TwisterRetwists.js');
 
+/**
+ * Describes a single post of a {@link TwisterUser}.
+ * @class
+ */
 function TwisterPost(data,signature,scope) {
     
     var name = data.n;
@@ -14,6 +18,7 @@ function TwisterPost(data,signature,scope) {
     
     this._type = "post";
     this._data = data;
+	this._isPromotedPost = false;
     this._replies = new TwisterReplies(name,id,scope);
     this._retwists = new TwisterRetwists(name,id,scope);
     
@@ -59,14 +64,22 @@ TwisterPost.prototype.getId = function () {
     return this._data.k;
 }
 
-TwisterPost.prototype.getlastId = function () {
-    if (this._data.lastk) {
+TwisterPost.prototype.getLastId = function () {
+	if (!this._isPromotedPost) {
 		return this._data.lastk;
-	} else if (this._data.k>0) {
-		return this._data.k-1;
 	} else {
-		return -1;
+		return this._data.k-1;
 	}
+}
+
+TwisterPost.prototype.doPreviousPost = function (cbfunc,querySettings) {
+	
+	if (!this._isPromotedPost) {
+		this._scope.getUser(this.getUsername()).doPost(this.getLastId(),cbfunc,querySettings);
+	} else {
+		this._scope.getPromotedPosts()._doPost(this.getLastId(),cbfunc,querySettings);
+	}
+	
 }
 
 TwisterPost.prototype.getTimestamp = function () {

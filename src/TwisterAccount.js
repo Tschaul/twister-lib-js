@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes a user account in Twister. Allows for the private information about that user as well as for posting new messages.
+ * @class
+ */
 function TwisterAccount(name,scope) {
     
 	TwisterResource.call(this,name,scope);
@@ -44,7 +48,7 @@ TwisterAccount.prototype.inflate = function (flatData) {
 
 }
 
-TwisterAccount.activateTorrents = function () {
+TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
 	var Twister = this._scope;
     
@@ -57,11 +61,13 @@ TwisterAccount.activateTorrents = function () {
 			var torrent = Twister.getUser(res[i]).getTorrent();
             
             torrent._active = true ;
-            torrent._followingName = thisAccount.name ;
+            torrent._followingName = thisAccount._name ;
        
         	torrent._lastUpdate = Date.now()/1000;
 			
 		}
+		
+		cbfunc();
         
     }, function(ret) {
         
@@ -121,7 +127,8 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 
 }
 
-TwisterAccount.prototype.getDirectMessages = function (username) {
+
+TwisterAccount.prototype.getDirectMessages = function (username, cbfunc, querySettings) {
 
 	if ( !(username in this._directmessages) ){
 	
@@ -134,5 +141,17 @@ TwisterAccount.prototype.getDirectMessages = function (username) {
 	}
 	
 	return this._directmessages[username];
+
+}
+
+TwisterAccount.prototype.doLatestDirectMessage = function (username, cbfunc, querySettings) {
+
+	this.getDirectMessages(username)._checkQueryAndDo(cbfunc, querySettings);
+
+}
+
+TwisterAccount.prototype.doLatestDirectMessagesUntil = function (username, cbfunc, querySettings) {
+
+	this.getDirectMessages(username)._doUntil(cbfunc, querySettings);
 
 }

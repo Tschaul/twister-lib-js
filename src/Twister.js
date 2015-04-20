@@ -1,5 +1,10 @@
 'use strict';
 
+/**
+ * Twister singleton class descriping the state fo the Twister network.
+ * @module
+ */
+
 
 var TwisterResource = require("./TwisterResource.js");
 var Twister = new TwisterResource("twister",{});
@@ -35,32 +40,58 @@ Twister._host = "";
 Twister._timeout = 20000;
 Twister._errorfunc = function(error){console.log("Twister error: "+error.message);};
 
-var TwisterTrendingHashtags = require("./TwisterTrendingHashtags.js");
-Twister._trendingHashtags = new TwisterTrendingHashtags(10,Twister);
-
 var TwisterPromotedPosts = require("./TwisterPromotedPosts.js");
 Twister._promotedPosts = new TwisterPromotedPosts(Twister);
 
+/** @function
+ * @name init 
+ * @param {string} options.host endpoint for JSON-RPC queries used by default
+ * @param {int} options.timeout timeout for JSON-RPC in milliseconds
+ * @param {function} options.errorfunc called when JSON-RPC error occurs
+ * @param {bool} options.verifySignatures
+ * @param {bool} options.querySettingsByType
+ * @param {bool} options.maxDHTQueries
+ */
 Twister.init = function (options) {
-    
-    Twister._host = options.host;
+
+	var availableOptions = ["host","timeout","errorfunc","verifySignatures","querySettingsByType","maxDHTQueries"];
+	
+	for (var key in options) {
+		
+		if (availableOptions.indexOf(key)>-1) {
+	
+    		Twister["_"+key] = options[key];
+			
+		}
+		
+	}
 
 }
 
-Twister.getUser = function (initval) {
+/** @function
+ * @name getUser 
+ * @description Creates TwisterUser object if not a present in cache and return it.
+ * @param {string} username
+ */
+Twister.getUser = function (username) {
     
-    if (Twister._cache[initval] === undefined) {
+    if (Twister._cache[username] === undefined) {
     
         var TwisterUser = require('./TwisterUser.js');
         
-        Twister._cache[initval] = new TwisterUser(initval,Twister);
+        Twister._cache[username] = new TwisterUser(username,Twister);
 
     }
     
-    return Twister._cache[initval];
+    return Twister._cache[username];
 
 }
 
+/** @function
+ * @name getUser 
+ * @description Creates {@link TwisterUser} object if not a present in cache and return it.
+ * @param {string} username
+ */
 Twister.getHashtag = function (tag) {
 
     if (Twister._hashtags[tag] === undefined) {
@@ -75,24 +106,29 @@ Twister.getHashtag = function (tag) {
     
 }
 
-Twister.doHashtagPosts = function (tag,cbfunc,outdatedLimit) {
-    Twister.getHashtag(tag)._checkQueryAndDo(cbfunc,outdatedLimit);
+/** @function
+ * @name doHashtagPosts 
+ * @description Creates {@link TwisterUser} object if not a present in cache and return it.
+ * @param {string} tag
+ * @param {function} cbfunc callback function. Gets called with an array of {@link TwisterPost} objects as parameter.
+ * @param {Object} querySettings {@see getQuerySettings}
+ */
+Twister.doHashtagPosts = function (tag,cbfunc,querySettings) {
+    Twister.getHashtag(tag)._checkQueryAndDo(cbfunc,querySettings);
 }
 
-Twister.doTrendingHashtags = function (count,cbfunc) {
-
-    if (Twister._trendingHashtags._count!=count) {
-        Twister._trendingHashtags.setCount(count);
-    }
-    
-    Twister._trendingHashtags._checkQueryAndDo(cbfunc);
-    
-}
-
+/** @function
+ * @name getPromotedPosts 
+ * @description returns the {@link TwisterPromotedPosts} object.
+ */
 Twister.getPromotedPosts = function() {
 	return Twister._promotedPosts;
 }
 
+/** @function
+ * @name getAccount 
+ * @description returns the {@link TwisterAccount} object for a given user. The user must already be loaded (except for the "guest" user). To load wallets from the server use loadServerAccounts.
+ */
 Twister.getAccount = function (name) {
 	
 	if(name=="guest" && !("guest" in Twister._wallet) ) {
@@ -106,7 +142,11 @@ Twister.getAccount = function (name) {
 	return Twister._wallet[name];
 }
 
-Twister.loadServerAccounts = function (cbfunc) {
+/** @function
+ * @name loadAccounts 
+ * @description loads available account into the wallet. 
+ */
+Twister.loadAccounts = function (cbfunc) {
 	
 	Twister.RPC("listwalletusers", [], function(res){
 	
@@ -139,6 +179,10 @@ Twister.loadServerAccounts = function (cbfunc) {
 
 }
 
+/** @function
+ * @name serializeCache 
+ * @description Flattens the complete cache into a nested object which can be used to reload the cache later.
+ */
 Twister.serializeCache = function () {
 
     var retUser = [];
@@ -155,11 +199,14 @@ Twister.serializeCache = function () {
     
     return {
         users: retUser,
-        hashtags: hashs,
-        trendinghashtags: this._trendingHashtags.flatten()
+        hashtags: hashs
            };
 }
 
+/** @function
+ * @name serializeCache 
+ * @description Reloads the cache from a flattened cached object
+ */
 Twister.deserializeCache = function (flatData) {
 
     if (flatData) {
@@ -183,10 +230,6 @@ Twister.deserializeCache = function (flatData) {
             this._hashtags[flatData.hashtags[i].name]=newhashtag;
 
         }
-        
-        var TwisterTrendingHashtags = require('./TwisterTrendingHashtags.js');
-        this._trendingHashtags = new TwisterTrendingHashtags(10,Twister);
-        this._trendingHashtags.inflate(flatData.trendinghashtags);
 
     }
     

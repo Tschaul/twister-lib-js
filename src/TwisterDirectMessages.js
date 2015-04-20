@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the direct messages between an {@link TwisterAccount} and an {@link TwisterUser}
+ * @class
+ */
 TwisterDirectMessages = function (walletusername,name,scope) {
     
 	this._hasParentUser = true;
@@ -79,11 +83,14 @@ TwisterDirectMessages.prototype.inflateMessage = function (msg) {
 		msg.receiver = this._walletusername;
 	}
 	
+	var thisDirectMessages = this;
+	
 	msg.getId = function () {return this.id};
 	msg.getContent = function () {return this.text};
 	msg.getSender = function () {return this.sender};
 	msg.getReceiver = function () {return this.sender};
 	msg.getTimestamp = function () {return this.time};
+	msg.doPreviousMessage = function (cbfunc) { thisDirectMessages._doMessage(this.id-1,cbfunc) };
 	
 	return msg;
 
@@ -167,7 +174,7 @@ TwisterDirectMessages.prototype._cacheMessage =  function (msg,cbfunc) {
 
 }
 
-TwisterDirectMessages.prototype._doMessage = function (id,cbfunc) {
+TwisterDirectMessages.prototype._doMessage = function (id,cbfunc, querySettings) {
 
     var Twister = this._scope;
     
@@ -180,7 +187,9 @@ TwisterDirectMessages.prototype._doMessage = function (id,cbfunc) {
         } else {
             
             var thisResource = this;
-            
+			         
+			thisResource._updateInProgress = true;
+			
             thisResource.RPC("getspamposts", [ 30 , id ], function(res) {
             		
 					if (res.length>0) {
@@ -194,13 +203,10 @@ TwisterDirectMessages.prototype._doMessage = function (id,cbfunc) {
 						cbfunc(thisResource._messages[id])
 
 					} 
+				
+					thisResource._updateInProgress = false;
 
-				}, function(ret) {
-
-					thisResource._handleError(ret);
-
-				}
-
+				}, querySettings
 			);
             
         }
@@ -209,48 +215,21 @@ TwisterDirectMessages.prototype._doMessage = function (id,cbfunc) {
     
 };
 
-TwisterDirectMessages.prototype.doMessagesSince = function (timestamp, cbfunc, querySettings) {
-    
-    var thisResource = this;
-    
-    if (timestamp <= 0) { timestamp = timestamp + Date.now()/1000; }
-    
-    var doPostTilTimestamp = function (post) {
-        
-        if (post!==null && ( post.getTimestamp() > timestamp ) ) {
-            
-            cbfunc(post);
-            thisResource._doMessage(message.getId()-1, doPostTilTimestamp);
-            
-        }
-        
-    };
-        
-    thisResource._checkQueryAndDo(doPostTilTimestamp, querySettings);
-    
-};
+TwisterDirectMessages.prototype._doUntil = function (cbfunc, querySettings) {
 
-TwisterDirectMessages.prototype.doLatestMessages = function (count, cbfunc, querySettings) {
-    
-    var thisResource = this;
-    
-    var countSoFar = 0;
-    
-    var doPostTilCount = function (message) {
-        
-        if (countSoFar < count) {
-            
-            cbfunc(message);
-            countSoFar=countSoFar+1;
-            thisResource._doMessage(message.getId()-1, doPostTilCount);
-            
-        }
-        
-    };
-    
-    thisResource._checkQueryAndDo(doPostTilCount, querySettings);
-    
-};
+	this._checkQueryAndDo(function doUntil(message){
+	
+		var retVal = cbfunc(message);
+		
+		if( message.getId()!=1 && retVal!==false ) { 
+			
+			message.doPreviousMessage(doUntil, querySettings); 
+			
+		}
+	
+	}, querySettings);
+	
+}
 
 module.exports = TwisterDirectMessages;
 

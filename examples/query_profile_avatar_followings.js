@@ -24,6 +24,8 @@ Twister.getUser("tschaul").doAvatar(function(avatar){
 
 Twister.getUser("tschaul").doFollowings(function(followings){
     
-    console.log(followings.getNames());
+	for(var i in followings) {
+    	console.log(followings[i].getUsername());
+	}
 
 });

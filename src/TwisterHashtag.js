@@ -2,6 +2,11 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+
+/**
+ * Describes a hashtag resource.
+ * @class
+ */
 TwisterHashtag = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
@@ -13,7 +18,11 @@ TwisterHashtag = function (name,scope) {
 
 inherits(TwisterHashtag,TwisterResource);
 
-TwisterHashtag.prototype._queryAndDo = function (cbfunc) {
+TwisterHashtag.prototype._do = function (cbfunc) {
+	this.doPosts(cbfunc);
+}
+
+TwisterHashtag.prototype._queryAndDo = function (cbfunc, querySettings) {
     
     var currentCounter = 1;
         
@@ -56,14 +65,19 @@ TwisterHashtag.prototype._queryAndDo = function (cbfunc) {
 
 TwisterHashtag.prototype.doPosts = function (cbfunc) {
 
+	var posts = [];
+	
     for (var key in this._data) {
 
         var nandk = key.split(":post");
         var username = nandk[0];
         var id = parseInt(nandk[1]);
-        Twister.getUser(username).doPost(id,cbfunc);
-
+        
+		posts.push(Twister.getUser(username).getPost(id));
+		
     }
+	
+	cbfunc(posts);
 
 }
 

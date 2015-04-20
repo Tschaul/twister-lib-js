@@ -3,6 +3,10 @@ var inherits = require('inherits');
 var TwisterResource = require('./TwisterResource.js');
 var TwisterTorrent = require('./TwisterTorrent.js');
 
+/**
+ * Describes the stream of posts of a {@link TwisterUser}.
+ * @class
+ */
 TwisterStream = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
@@ -212,6 +216,22 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
     }
     
 };
+
+TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
+
+	this._checkQueryAndDo(function doUntil(post){
+	
+		var retVal = cbfunc(post);
+		
+		if( post.getId()!=1 && retVal!==false ) { 
+			
+			post.doPreviousPost(doUntil, querySettings); 
+			
+		}
+	
+	}, querySettings);
+	
+}
 
 module.exports = TwisterStream;
 

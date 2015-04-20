@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the retwists of a {@link TwisterPost}.
+ * @class
+ */
 TwisterRetwists = function (name,id,scope) {
     
     TwisterResource.call(this,name,scope);
@@ -30,6 +34,10 @@ TwisterRetwists.prototype.inflate = function (flatData) {
     
     this._id = flatData.id;
 
+}
+
+TwisterRetwists.prototype._do = function (cbfunc) {
+	this.doPosts(cbfunc);
 }
 
 TwisterRetwists.prototype._queryAndDo = function (cbfunc) {
@@ -77,15 +85,19 @@ TwisterRetwists.prototype._queryAndDo = function (cbfunc) {
 
 TwisterRetwists.prototype.doPosts = function (cbfunc) {
 
+    var posts = [];
+	
     for (var key in this._data) {
 
         var nandk = key.split(":post");
         var username = nandk[0];
         var id = parseInt(nandk[1]);
-        Twister.getUser(username).doPost(id,cbfunc);
-
+        
+		posts.push(Twister.getUser(username).getPost(id));
+		
     }
-
+	
+	cbfunc(posts);
 }
 
 module.exports = TwisterRetwists;

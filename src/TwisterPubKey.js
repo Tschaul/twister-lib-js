@@ -13,6 +13,10 @@ var twister_network = {
 }
 
 
+/**
+ * Describes the public key of a user.
+ * @class
+ */
 TwisterPubKey = function (name,scope) {
     
     this._name = name;
@@ -80,6 +84,19 @@ TwisterPubKey.prototype.getKey = function () {
 
 TwisterPubKey.prototype.verifySignature = function (message, signature, cbfunc) {
 
+	
+	if ("v" in message && "sig_userpost" in message.v) {
+	
+		message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
+		
+	}
+	
+	if ("sig_rt" in message) {
+	
+		message.sig_rt = new Buffer(message.sig_rt, 'hex');
+		
+	}
+	
     var Twister = this._scope;
     
     if (Twister._verifySignatures) {
@@ -90,7 +107,6 @@ TwisterPubKey.prototype.verifySignature = function (message, signature, cbfunc) 
 
         var timeout=Twister._signatureVerificationsInProgress*Twister._averageSignatureCompTime*2;
 
-        //console.log(messageVerificationsInProgress);
 
         setTimeout(function(){
 
@@ -100,9 +116,7 @@ TwisterPubKey.prototype.verifySignature = function (message, signature, cbfunc) 
 
             message = bencode.encode(message);
 
-            if (!Buffer.isBuffer(signature)) {
-                signature = new Buffer(signature, 'hex')
-            }
+            signature = new Buffer(signature, 'hex');
 
 			try {
 				

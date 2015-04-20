@@ -5,6 +5,9 @@ Twister.init({
     host: 'http://user:pwd@127.0.0.1:28332',
 });
 
-Twister.getPromotedPosts().doLatestPosts(40,function(post){
+var count = 1;
+
+Twister.getPromotedPosts().doLatestPostsUntil(function(post){
     console.log(post.getTimestamp()+": "+post.getUsername()+": "+post.getContent());
+	if(count++==1) { return false; }
 });

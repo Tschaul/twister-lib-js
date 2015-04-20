@@ -3,6 +3,10 @@
 var inherits = require('inherits');
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the torrent of the {@link TwisterPosts} of a {@link TwisterUser} when available on the host. The torrent significantly speeds up post querying time. It is implemented as a look-ahead that is queryied when accessing a post that is not already in cache.
+ * @class
+ */
 function TwisterTorrent(name,scope) {
     
     TwisterResource.call(this,name,scope);
@@ -123,7 +127,7 @@ TwisterTorrent.prototype.getQuerySetting = function (setting) {
     if (setting in this._querySettings) {
         return this._querySettings[setting];
     }
-    
+	
     if (setting in Twister.getAccount(this._followingName)._querySettings) {
         return Twister.getAccount(this._followingName)._querySettings[setting];
     }
@@ -290,7 +294,7 @@ TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
                     
                     }
                     
-                    if (res[username]==Twister.getUser(username).getLatestId()) {
+                    if (res[username]==Twister.getUser(username)._stream._lastId) {
                       
                         Twister.getUser(username)._stream._lastUpdate=Date.now()/1000;
                         

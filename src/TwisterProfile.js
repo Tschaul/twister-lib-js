@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the profile of a {@link TwisterUser}.
+ * @class
+ */
 TwisterProfile = function (name,scope) {
     
     TwisterResource.call(this,name,scope);

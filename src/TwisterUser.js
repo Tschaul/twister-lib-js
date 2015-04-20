@@ -7,6 +7,10 @@ var TwisterPubKey = require('./TwisterPubKey.js');
 var TwisterStream = require('./TwisterStream.js');
 var TwisterMentions = require('./TwisterMentions.js');
 
+/**
+ * Describes a user in {@ Twister}. Allows for accessing all public onformation about this user.
+ * @class
+ */
 function TwisterUser(name,scope) {
     
     this._name = name;
@@ -63,10 +67,6 @@ TwisterUser.prototype.getUsername = function () {
     return this._name;
 }
 
-TwisterUser.prototype.getLatestId = function() {
-    return this._stream._latestId;
-}
-
 TwisterUser.prototype.getTorrent = function () {
     return this._stream._torrent;
 }
@@ -95,8 +95,22 @@ TwisterUser.prototype.doPost = function (id, cbfunc) {
     this._stream._doPost(id, cbfunc);
 }
 
-TwisterUser.prototype.doMentions = function (cbfunc) {
+TwisterUser.prototype.getPost = function (id) {
+    if (id in this._stream._posts) {
+		return this._stream._posts[id];
+	} else {
+		return null;	
+	}
+}
+
+TwisterUser.prototype.doMentions = function (cbfunc, querySettings) {
 
     this._mentions._checkQueryAndDo(cbfunc);
+
+}
+
+TwisterUser.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {
+
+    this._stream._doUntil(cbfunc, querySettings);
 
 }

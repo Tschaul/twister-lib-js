@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the promoted posts that are part of the twister blockchain.
+ * @class
+ */
 TwisterPromotedPosts = function (scope) {
     
     var name = "promoted";
@@ -112,6 +116,8 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
 
         var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
 
+		newpost._isPromotedPost = true;
+		
         thisResource._posts[newpost.getId()] = newpost;
         
         if ( thisResource._latestId<newpost.getId() ) {
@@ -191,53 +197,21 @@ TwisterPromotedPosts.prototype._doPost = function (id,cbfunc) {
 };
 
 
+TwisterPromotedPosts.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {
 
-TwisterPromotedPosts.prototype.doPostsSince = function (timestamp, cbfunc, querySettings) {
-    
+	Twister._promotedPosts._checkQueryAndDo(function doUntil(post){
 	
-    var thisResource = this;
-    
-    if (timestamp <= 0) { timestamp = timestamp + Date.now()/1000; }
-    
-    var doPostTilTimestamp = function (post) {
-        
-        if (post!==null && ( post.getTimestamp() > timestamp ) ) {
-            
-            cbfunc(post);
-            thisResource._doPost(post.getlastId(), doPostTilTimestamp);
-            
-        }
-        
-    };
-        
-    thisResource._checkQueryAndDo(doPostTilTimestamp, querySettings);
-    
-};
-
-TwisterPromotedPosts.prototype.doLatestPosts = function (count, cbfunc, querySettings) {
-    
+		var retVal = cbfunc(post);
+		
+		if( post.getId()!=1 && retVal!==false ) { 
+			
+			post.doPreviousPost(doUntil, querySettings); 
+			
+		}
 	
-    var thisResource = this;
-    
-    var countSoFar = 0;
-    
-    var doPostTilCount = function (post) {
-        
-        if (countSoFar < count) {
-            
-            cbfunc(post);
-            countSoFar=countSoFar+1;
-            thisResource._doPost(post.getlastId(), doPostTilCount);
-            
-        }
-        
-    };
-      
-    var outdatedTimestamp = 0;
-    
-    thisResource._checkQueryAndDo(doPostTilCount, querySettings);
-    
-};
+	}, querySettings);
+	
+}
 
 module.exports = TwisterPromotedPosts;
 

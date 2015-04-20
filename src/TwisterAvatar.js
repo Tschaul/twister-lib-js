@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the avatar of a {@link TwisterUser}.
+ * @class
+ */
 TwisterAvatar = function (name,scope) {
     
     this._type = "avatar";
@@ -21,8 +25,6 @@ TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
     var thisResource = this;
     
     var Twister = this._scope;
-    
-    this._updateInProgress = true;
     
     thisResource.dhtget([thisResource._name, "avatar", "s"],
                    

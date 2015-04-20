@@ -1,19 +1,30 @@
 // For this to work twisterd must be running at localhost
 
-Twisterblub = require("../src/Twister.js")
+Twister = require("../src/Twister.js")
 
-var tschaul = Twisterblub.getUser("tschaul");
+var tschaul = Twister.getUser("tschaul");
 
-Twisterblub.init({
+Twister.init({
     host: 'http://user:pwd@127.0.0.1:28332',
+	verifySignatures: false
 });
 
-tschaul.doFollowings(function(following){
+tschaul.doFollowings(function(followings){
     
-    Twisterblub.getUser(following.getUsername()).doPostsSince(Date.now()/1000 - 24*60*60,function(post){
-        
-        console.log(post.getContent());
-        
-    });
+	for(var i in followings) {
+	
+		outdatedTimestamp = Date.now()/1000 - 24*60*60;
+
+		Twister.getUser(followings[i].getUsername()).doLatestPostsUntil(function(post){
+
+			if (post.getTimestamp()>outdatedTimestamp) {
+				console.log(post.getContent());
+			} else {
+				return false;
+			}
+
+		});
+		
+	}
 
 });

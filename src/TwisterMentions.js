@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the mentions of a {@link TwisterUser}.
+ * @class
+ */
 TwisterMentions = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
@@ -11,6 +15,10 @@ TwisterMentions = function (name,scope) {
 }
 
 inherits(TwisterMentions,TwisterResource);
+
+TwisterMentions.prototype._do = function (cbfunc) {
+	this.doPosts(cbfunc);
+}
 
 TwisterMentions.prototype._queryAndDo = function (cbfunc) {
     
@@ -57,14 +65,19 @@ TwisterMentions.prototype._queryAndDo = function (cbfunc) {
 
 TwisterMentions.prototype.doPosts = function (cbfunc) {
 
+	var posts = [];
+	
     for (var key in this._data) {
 
         var nandk = key.split(":post");
         var username = nandk[0];
         var id = parseInt(nandk[1]);
-        Twister.getUser(username).doPost(id,cbfunc);
-
+        
+		posts.push(Twister.getUser(username).getPost(id));
+		
     }
+	
+	cbfunc(posts);
 
 }
 

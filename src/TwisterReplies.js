@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the replies to a {ælink TwisterPost}.
+ * @class
+ */
 TwisterReplies = function (name,id,scope) {
     
     TwisterResource.call(this,name,scope);
@@ -30,6 +34,10 @@ TwisterReplies.prototype.inflate = function (flatData) {
     
     this._id = flatData.id;
 
+}
+
+TwisterReplies.prototype._do = function (cbfunc) {
+	this.doPosts(cbfunc);
 }
 
 TwisterReplies.prototype._queryAndDo = function (cbfunc) {
@@ -77,14 +85,19 @@ TwisterReplies.prototype._queryAndDo = function (cbfunc) {
 
 TwisterReplies.prototype.doPosts = function (cbfunc) {
 
+    var posts = [];
+	
     for (var key in this._data) {
 
         var nandk = key.split(":post");
         var username = nandk[0];
         var id = parseInt(nandk[1]);
-        Twister.getUser(username).doPost(id,cbfunc);
-
+        
+		posts.push(Twister.getUser(username).getPost(id));
+		
     }
+	
+	cbfunc(posts);
 
 }
 

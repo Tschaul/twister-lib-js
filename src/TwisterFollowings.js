@@ -2,6 +2,10 @@ var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
 
+/**
+ * Describes the followings of a {@link TwisterUser}
+ * @class
+ */
 TwisterFollowings = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
@@ -10,6 +14,10 @@ TwisterFollowings = function (name,scope) {
 }
 
 inherits(TwisterFollowings,TwisterResource);
+
+TwisterFollowings.prototype._do= function (cbfunc) {
+	this.doUsers(cbfunc);
+}
 
 TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
 
@@ -67,11 +75,15 @@ TwisterFollowings.prototype.doUsers = function(cbfunc) {
     
     var followingNames = this.getNames();
     
-    for (var i=0; i<followingNames.length; i++) {
+	followings = [];
+	
+    for (var i in followingNames) {
 
-        cbfunc(Twister.getUser(followingNames[i]));
+        followings.push(Twister.getUser(followingNames[i]));
 
     }
+	
+	cbfunc(followings);
 
 }
 

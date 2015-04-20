@@ -79,11 +79,6 @@ TwisterUsers.prototype.doLatestPosts = function (count, cbfunc, outdatedLimit) {
             
             }
             
-            //console.log("posts lastindex check");
-            //console.log(posts);
-            //console.log(latestPostIndex);
-            
-            
             Twister.getUser(posts[latestPostIndex].getUsername())
                 .doPost(
                     posts[latestPostIndex].getlastId(),
