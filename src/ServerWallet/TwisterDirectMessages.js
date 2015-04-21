@@ -45,7 +45,7 @@ TwisterDirectMessages.prototype.flatten = function () {
 
 TwisterDirectMessages.prototype.inflate = function (flatData) {
     
-    var TwisterPost = require('./TwisterPost.js');
+    var TwisterPost = require('../TwisterPost.js');
     
     TwisterResource.prototype.inflate.call(this,flatData);
     

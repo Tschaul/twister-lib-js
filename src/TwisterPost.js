@@ -9,7 +9,7 @@ var TwisterRetwists = require('./TwisterRetwists.js');
  * Describes a single post of a {@link TwisterUser}.
  * @class
  */
-function TwisterPost(data,signature,scope) {
+function TwisterPost(data,scope) {
     
     var name = data.n;
     var id = data.k;

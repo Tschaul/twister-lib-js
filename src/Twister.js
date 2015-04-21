@@ -33,6 +33,7 @@ Twister._querySettingsByType = {
         profile: 60*60,
         avatar: 60*60,
         torrent: 60*60,
+        followings: 60*60
     }
     
 };
@@ -78,15 +79,19 @@ Twister.init = function (options) {
  */
 Twister.getUser = function (username) {
     
-    if (Twister._userCache[username] === undefined) {
+    if (username) {
     
-        var TwisterUser = require('./TwisterUser.js');
-        
-        Twister._userCache[username] = new TwisterUser(username,Twister);
+        if (Twister._userCache[username] === undefined) {
 
+            var TwisterUser = require('./TwisterUser.js');
+
+            Twister._userCache[username] = new TwisterUser(username,Twister);
+
+        }
+
+        return Twister._userCache[username];
+        
     }
-    
-    return Twister._userCache[username];
 
 }
 
@@ -208,7 +213,7 @@ Twister.serializeCache = function () {
     
     var options = {};
     
-    for(vari in availableOptions) {
+    for(var i in availableOptions) {
         options[availableOptions[i]]=Twister["_"+availableOptions[i]];        
     }
     
@@ -234,7 +239,7 @@ Twister.deserializeCache = function (flatData) {
         Twister.init(flatData.options);
         
         if (Twister._walletType=="server") {
-            var TwisterAccount = require('./ServerWallet/TwisterUser.js');
+            var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
         } else {
             Twister._handleError({message: "Unsupported wallet type."})
             return;

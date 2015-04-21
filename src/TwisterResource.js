@@ -40,13 +40,13 @@ TwisterResource.prototype.flatten = function () {
 TwisterResource.prototype.inflate = function (flatData) {
     
     this._lastUpdate = flatData.lastUpdate;
-	this.verified = flatData.verified;
-	this.querySettings = flatData.querySettings;
-	this.revisionNumber = flatData.revisionNumber;
+	this._verified = flatData.verified;
+	this._querySettings = flatData.querySettings;
+	this._revisionNumber = flatData.revisionNumber;
     this._name = flatData.name;
     this._data = flatData.data;
 	
-	if (!this.verified) {this._lastUpdate=-1;}
+	if (!this._verified) {this._lastUpdate=-1;}
 
 }
 
@@ -64,7 +64,8 @@ TwisterResource.prototype._do =  function (cbfunc) {
  */
 TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
     
-    if (!querySettings) {querySettings={};}
+    if (!querySettings) {querySettings={};} 
+    //else {console.log(querySettings)}
     
     var Twister = this._scope;
 
@@ -77,12 +78,16 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
 
         var outdatedTimestamp = 0;
         
+        //console.log(thisResource.getQuerySetting("outdatedLimit"));
+      
         outdatedTimestamp = Date.now()/1000 - thisResource.getQuerySetting("outdatedLimit");    
 
         if ( this._lastUpdate > outdatedTimestamp ){
             
             thisResource._do(cbfunc);
             
+            //console.log("fast lane");
+          
             thisResource._activeQuerySettings = {};
             thisResource._updateInProgress = false;
 
@@ -91,6 +96,8 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
             thisResource._queryAndDo(function(newresource){
                 
                 thisResource._do(cbfunc);
+              
+                //console.log("fast lane");
                 
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
@@ -130,8 +137,10 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
         return this._querySettings[setting];
     }
     
-    if (setting in Twister._querySettingsByType) {
-        return Twister._querySettingsByType[setting];
+    //console.log(this._type,Twister._querySettingsByType)
+  
+    if (setting in Twister._querySettingsByType && this._type in Twister._querySettingsByType[setting]) {
+        return Twister._querySettingsByType[setting][this._type];
     }
     
     if (this._hasParentUser && setting in Twister.getUser(this._name)._querySettings) {
@@ -162,6 +171,8 @@ TwisterResource.prototype._handleError = function (error) {
 
 TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc) {
     
+    console.log(method,params);
+  
 	var thisResource = this;
 	
 	if (typeof errorFunc != "function") {
@@ -222,10 +233,15 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
 
 TwisterResource.prototype.dhtget = function (args,cbfunc) {
 
+  
+  
     var Twister = this._scope;
     
     var thisResource = this;
     
+  
+    console.log(thisResource._name+" "+thisResource._type)
+  
     if ( Twister._activeDHTQueries < Twister._maxDHTQueries ) {
     
         Twister._activeDHTQueries++;

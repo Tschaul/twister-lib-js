@@ -8,11 +8,9 @@ var TwisterResource = require('./TwisterResource.js');
  */
 TwisterAvatar = function (name,scope) {
     
-    this._type = "avatar";
-    this._name = name;
-    this._data =  null;
-
     TwisterResource.call(this,name,scope);
+  
+    this._type = "avatar";
     
 }
 

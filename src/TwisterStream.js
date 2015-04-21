@@ -45,6 +45,8 @@ TwisterStream.prototype.flatten = function () {
 
 TwisterStream.prototype.inflate = function (flatData) {
     
+    var Twister = this._scope;
+  
     var TwisterPost = require('./TwisterPost.js');
     
     TwisterResource.prototype.inflate.call(this,flatData);
@@ -55,7 +57,7 @@ TwisterStream.prototype.inflate = function (flatData) {
         
 		if (flatData.posts[i].verified) {
 		
-			var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
+			var newpost = new TwisterPost(flatData.posts[i].data,Twister);
 			newpost.inflate(flatData.posts[i]);
 			this._posts[newpost.getId()]=newpost;
 			
@@ -130,7 +132,7 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 		
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
+        var newpost = new TwisterPost(payload.userpost,Twister);
 
         thisResource._posts[newpost.getId()] = newpost;
         
@@ -155,7 +157,7 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
 					if (verified) {
 
-						thisResource._verified=true;
+						newpost._verified=true;
 
 						if (cbfunc && signatureVerification=="instant") { cbfunc(newpost); }
 
@@ -189,6 +191,8 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
             
         } else {
             
+            console.log("post "+id+" not in cache");
+          
             var thisResource = this;
             
             thisResource._torrent.fillCache(id,function(success){

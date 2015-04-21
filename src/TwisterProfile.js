@@ -25,6 +25,8 @@ TwisterProfile.prototype._queryAndDo = function (cbfunc) {
     
     var Twister = this._scope;
     
+    //console.log("before dhtget"+thisResource._name+" "+thisResource._type)
+                                
     thisResource.dhtget([thisResource._name, "profile", "s"],
                    
         function (result) {

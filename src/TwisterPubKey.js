@@ -26,6 +26,8 @@ TwisterPubKey = function (name,scope) {
     TwisterResource.call(this,name,scope);   
     
     this._type = "pubkey";
+  
+    this._verified = true;
 
     
 }
@@ -86,22 +88,19 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
     var message = JSON.parse(JSON.stringify(message_ori));
 
-    if ("v" in message && "sig_userpost" in message.v) {
-
-        message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
-
-    }
-
-    if ("v" in message && "userpost" in message.v && "sig_rt" in message.v.userpost) {
-
-        message.v.userpost.sig_rt = new Buffer(message.v.userpost.sig_rt, 'hex');
-
+    if ("v" in message && (typeof message.v)=="object"){ 
+        if("sig_userpost" in message.v) {
+            message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
+        }
+        if ("userpost" in message.v) { 
+            if ("sig_rt" in message.v.userpost) {
+                message.v.userpost.sig_rt = new Buffer(message.v.userpost.sig_rt, 'hex');
+            }
+        }
     }
 
     if ("sig_rt" in message) {
-
         message.sig_rt = new Buffer(message.sig_rt, 'hex');
-
     }
 
     //console.log("verifying message")

@@ -9,7 +9,7 @@ var TwisterResource = require('./TwisterResource.js');
 TwisterFollowings = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
-    this._type = "following";
+    this._type = "followings";
     
 }
 
