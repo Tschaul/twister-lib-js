@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: TwisterPromotedPosts.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: TwisterPromotedPosts.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var inherits = require('inherits');
+
+var TwisterResource = require('./TwisterResource.js');
+
+/**
+ * Describes the promoted posts that are part of the twister blockchain.
+ * @class
+ */
+TwisterPromotedPosts = function (scope) {
+    
+    var name = "promoted";
+	this._hasParentUser = false;
+	
+    TwisterResource.call(this,name,scope);
+    
+    this._latestId = -1;
+    this._posts = {};
+    
+    this._type = "promotedposts";
+
+}
+
+inherits(TwisterPromotedPosts,TwisterResource);
+
+TwisterPromotedPosts.prototype.flatten = function () {
+
+    var flatData = TwisterResource.prototype.flatten.call(this);
+    
+    var flatPosts = [];
+    
+    for (var id in this._posts){
+        flatPosts.push(this._posts[id].flatten());
+    }
+    
+    flatData.posts = flatPosts;
+    flatData.latestId  = this._latestId;    
+    
+    return flatData;
+
+}
+
+TwisterPromotedPosts.prototype.inflate = function (flatData) {
+    
+    var TwisterPost = require('./TwisterPost.js');
+    
+    TwisterResource.prototype.inflate.call(this,flatData);
+    
+    this._latestId = flatData.latestId;
+    
+    for(var i = 0; i &lt; flatData.posts.length; i++){
+        
+        var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
+        newpost.inflate(flatData.posts[i]);
+        this._posts[newpost.getId()]=newpost;
+    
+    }
+
+}
+
+TwisterPromotedPosts.prototype._do =  function (cbfunc) {
+    
+    this._doPost(this._latestId,cbfunc);
+    
+}
+
+TwisterPromotedPosts.prototype._queryAndDo = function (cbfunc) {
+    	
+    var thisResource = this;
+        
+	thisResource.RPC("getspamposts", [ 30 ], function(res) {
+            		
+			if (res.length>0) {
+
+				for (var i = 0; i&lt;res.length; i++) {
+
+					thisResource._verifyAndCachePost(res[i],function(newpost){
+
+						if ( newpost.getId() > thisResource._latestId ) {
+
+							thisResource._latestId = newpost.getId();
+							thisResource._lastUpdate = Date.now()/1000;
+
+						}
+
+					});
+
+				}
+				
+				thisResource._do(cbfunc);
+
+			} 
+
+		}, function(ret) {
+
+			thisResource._handleError(ret);
+
+		}
+					 
+	);
+ 
+        
+}
+
+TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) {
+	
+    var Twister = this._scope;
+        
+    var thisResource = this;
+    
+    var newid = payload.userpost.k;
+    var payloadUser = payload.userpost.n;
+    
+    if( !( newid in thisResource._posts) ) {
+
+        var TwisterPost = require('./TwisterPost.js');
+
+        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
+
+		newpost._isPromotedPost = true;
+		
+        thisResource._posts[newpost.getId()] = newpost;
+        
+        if ( thisResource._latestId&lt;newpost.getId() ) {
+        
+            thisResource._latestId=newpost.getId();
+        
+        }
+        
+        if (cbfunc &amp;&amp; signatureVerification=="none") {
+            
+            cbfunc(newpost);
+
+        } else {
+        
+			if (signatureVerification=="background") { cbfunc(newpost); }
+			
+			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
+
+				pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
+
+
+					if (verified) {
+
+						thisResource._verified=true;
+
+						if (signatureVerification=="instant") { cbfunc(newpost); }
+
+					} else {
+
+						thisResource._handleError({message:"signature of post could not be verified"});
+
+					}
+
+				});
+
+			});
+				
+		}
+        
+    }
+
+}
+
+TwisterPromotedPosts.prototype._doPost = function (id,cbfunc) {
+
+    var Twister = this._scope;
+    
+    if (id &amp;&amp; id>0) {
+
+        if (id in this._posts){
+            
+            cbfunc(this._posts[id])
+            
+        } else {
+            
+            var thisResource = this;
+            
+            thisResource.RPC("getspamposts", [ 30 , id ], function(res) {
+            		
+					if (res.length>0) {
+
+						for (var i = 0; i&lt;res.length; i++) {
+
+							thisResource._verifyAndCachePost(res[i]);
+
+						}
+
+						cbfunc(thisResource._posts[id])
+
+					} 
+
+				}, function(ret) {
+
+					thisResource._handleError(ret);
+
+				}
+
+			);
+            
+        }
+        
+    }
+    
+};
+
+
+TwisterPromotedPosts.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {
+
+	Twister._promotedPosts._checkQueryAndDo(function doUntil(post){
+	
+		var retVal = cbfunc(post);
+		
+		if( post.getId()!=1 &amp;&amp; retVal!==false ) { 
+			
+			post.doPreviousPost(doUntil, querySettings); 
+			
+		}
+	
+	}, querySettings);
+	
+}
+
+module.exports = TwisterPromotedPosts;
+
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterAvatar.html">TwisterAvatar</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterFollowings.html">TwisterFollowings</a></li><li><a href="TwisterHashtag.html">TwisterHashtag</a></li><li><a href="TwisterMentions.html">TwisterMentions</a></li><li><a href="TwisterPost.html">TwisterPost</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Tue Apr 21 2015 09:10:15 GMT+0200 (CEST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -5,7 +5,8 @@
   "main": "src/Twister.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "bundle":"browserify src/Twister.js --standalone Twister > twister-lib.js"
+    "bundle":"browserify src/Twister.js --standalone Twister > twister-lib.js",
+    "docs": "jsdoc src/*.js src/ServerWallet/*.js -d docs"
   },
   "repository": {
     "type": "git",

@@ -8,7 +8,7 @@ Twister.init({
 });
 
 
-Twister.loadAccounts(function(){
+Twister.loadServerAccounts(function(){
 
 	//console.log(Twister._wallet)
 	
