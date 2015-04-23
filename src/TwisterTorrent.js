@@ -225,7 +225,7 @@ TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,usernames,max
                         
                 }
               
-                console.log("maxId = "+maxId+" "+usernames)
+                //console.log("maxId = "+maxId+" "+usernames)
                 
                 if ( !maxId || maxId==-1 ) {
                 
@@ -297,7 +297,6 @@ TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
                 var thisUserIsUpToDate = false;
                 
                 var outdatedUsers =[];
-                
 
                 for (var username in res) {
 
@@ -368,17 +367,17 @@ TwisterTorrent.prototype.updateCache = function (cbfunc) {
     var thisTorrent = this;
     var thisStream = Twister.getUser(this._name)._stream;
       
-    console.log("update cache "+thisTorrent._name)  
+    //console.log("update cache "+thisTorrent._name)  
     thisTorrent._checkForUpdatesUsingGetLastHave(function(uptodate){
     
       
         if (uptodate) {
-        console.log("lasthaves "+thisTorrent._name+" worked") 
+        //console.log("lasthaves "+thisTorrent._name+" worked") 
             
             cbfunc(true);
             
         } else {
-        console.log("lasthaves "+thisTorrent._name+" failed") 
+        //console.log("lasthaves "+thisTorrent._name+" failed") 
             
             thisTorrent._fillCacheUsingGetposts(30,[thisTorrent._name],-1,-1,cbfunc);
             
@@ -396,7 +395,7 @@ TwisterTorrent.prototype.fillCache = function (id,cbfunc) {
     var thisTorrent = this;
     var thisUser = Twister.getUser(this._name);
   
-    console.log("fill cache "+thisTorrent._name)  
+    //console.log("fill cache "+thisTorrent._name)  
     
     thisTorrent._fillCacheUsingGetposts(30,[thisTorrent._name],id,-1,cbfunc);
 

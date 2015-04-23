@@ -111,7 +111,7 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
     Twister._signatureVerificationsInProgress++;
 
-    var timeout=Twister._signatureVerificationsInProgress*Twister._averageSignatureCompTime*2;
+    var timeout=Twister._signatureVerificationsInProgress*Twister._averageSignatureCompTime*4;
 
     setTimeout(function(){
 

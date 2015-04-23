@@ -57,7 +57,7 @@ TwisterResource.prototype._do =  function (cbfunc) {
 }
 
 /**
- * Checks whether cached resource is outdated and invokes an update if needed. Call cbfunc on the resource when done.
+ * Checks whether cached resource is outdated and invokes an update if needed. Calls cbfunc on the resource when done.
  * @function
  * @param {function} cbfunc callback function
  * @param {Object} querySettings
@@ -171,7 +171,7 @@ TwisterResource.prototype._handleError = function (error) {
 
 TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc) {
     
-    console.log(method,params);
+    //console.log(method,params);
   
 	var thisResource = this;
 	
@@ -201,12 +201,14 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
                     
         var request = require('request');
         request({
+          
             uri: this.getQuerySetting("host"),
             method: "POST",
             timeout: this.getQuerySetting("timeout"),
             followRedirect: true,
             maxRedirects: 10,
             body: '{"jsonrpc": "2.0", "method": "'+method+'", "params": '+JSON.stringify(params)+', "id": 0}'
+          
         }, function(error, response, body) {
             
             if (error) { 
@@ -233,14 +235,11 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
 
 TwisterResource.prototype.dhtget = function (args,cbfunc) {
 
-  
-  
     var Twister = this._scope;
     
     var thisResource = this;
-    
   
-    console.log(thisResource._name+" "+thisResource._type)
+    //console.log(thisResource._name+" "+thisResource._type)
   
     if ( Twister._activeDHTQueries < Twister._maxDHTQueries ) {
     

@@ -191,7 +191,7 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
             
         } else {
             
-            console.log("post "+id+" not in cache");
+            //console.log("post "+id+" not in cache");
           
             var thisResource = this;
             
