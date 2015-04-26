@@ -76,34 +76,43 @@ TwisterStream.prototype._do =  function (cbfunc) {
 }
 
 TwisterStream.prototype._queryAndDo = function (cbfunc) {
-
-    //console.log("inside stream query and do of "+this._name);
-    
+  
     var thisResource = this;
         
     thisResource._torrent.updateCache(function(success){
 
         if (success) {
             
+            thisResource._log("updating cache with torrent successfull")
+          
             thisResource._do(cbfunc);
+            thisResource._updateInProgress = false;
 
         } else {
+          
+            thisResource._log("updating cache with torrent failed")
 
             thisResource.dhtget([thisResource._name, "status", "s"], function (result) {
 
+                    console.log(result);
+              
                     if (result[0]) {
 
                         thisResource._verifyAndCachePost(result[0].p.v, function(newpost) {
 
                             thisResource._latestId = newpost.getId();
                             thisResource._lastUpdate = Date.now()/1000;
+                            thisResource._updateInProgress = false;
 
                             cbfunc(newpost);
 
                         });
 
 
-                    } else { cbfunc(null) }
+                    } else { 
+                      cbfunc(null);
+                      thisResource._updateInProgress = false;
+                    }
 
                 }
 
@@ -135,6 +144,7 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
         var newpost = new TwisterPost(payload.userpost,Twister);
 
         thisResource._posts[newpost.getId()] = newpost;
+      
         
         if ( thisResource._latestId<newpost.getId() ) {
         
@@ -173,77 +183,73 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 				
 		}
  
+    } else {
+    
     }
 
 }
 
 TwisterStream.prototype._doPost = function (id,cbfunc) {
 
-    var Twister = this._scope;
-    
-    if (id && id>0) {
+  var Twister = this._scope;
 
-        if (id in this._posts){
-            
-            cbfunc(this._posts[id])
-            
-            //console.log("post already in cache");
-            
+  if (id && id>0) {
+
+    if (id in this._posts){
+
+      cbfunc(this._posts[id])
+
+      this._log("post already in cache");
+
+    } else {
+
+      this._log("post "+id+" not in cache");
+
+      var thisResource = this;
+
+      thisResource._torrent.fillCache(id,function(success){
+
+        if (success) {
+
+          thisResource._log("fill cache was successfull")
+
+          cbfunc(thisResource._posts[id])
+
         } else {
-            
-            //console.log("post "+id+" not in cache");
-          
-            var thisResource = this;
-            
-            thisResource._torrent.fillCache(id,function(success){
-        
-                if (success) {
 
-                    thisResource._doPost(thisResource._latestId,cbfunc);
+          thisResource.dhtget([thisResource._name, "post"+id, "s"],
 
-                } else {
+            function (result) {
 
-                    thisResource.dhtget([thisResource._name, "post"+id, "s"],
-                                   
-                        function (result) {
+              thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
 
-                            if (result[0]) {
+            }
 
-                                thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
-                                
-                            } else {
-                            
-                                cbfunc(null);
-                            
-                            }
+          ); 
 
-                        }
-                                   
-                    ); 
-                    
-                }
-                 
-            });
-            
         }
-        
+
+      });
+
     }
+
+  }
     
 };
 
 TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 
-	this._checkQueryAndDo(function doUntil(post){
-	
-		var retVal = cbfunc(post);
-		
-		if( post.getId()!=1 && retVal!==false ) { 
-			
-			post.doPreviousPost(doUntil, querySettings); 
-			
-		}
-	
-	}, querySettings);
+  this._checkQueryAndDo(function doUntil(post){
+
+    var retVal = cbfunc(post);
+
+    if( post.getId()!=1 && retVal!==false ) { 
+
+      post.doPreviousPost(doUntil, querySettings); 
+
+    }
+
+  }, querySettings);
 	
 }
 

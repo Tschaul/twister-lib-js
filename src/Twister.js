@@ -37,6 +37,7 @@ Twister._querySettingsByType = {
     }
     
 };
+Twister._logfunc = function(){};
 Twister._host = "";
 Twister._timeout = 20000;
 Twister._errorfunc = function(error){console.log("Twister error: "+error.message);};

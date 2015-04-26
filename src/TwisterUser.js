@@ -88,6 +88,7 @@ TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
 };
 
 TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
+  console.log("doing status")
     this._stream._checkQueryAndDo(cbfunc, querySettings);
 };
 

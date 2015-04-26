@@ -77,8 +77,6 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         thisResource._updateInProgress = true;
 
         var outdatedTimestamp = 0;
-        
-        //console.log(thisResource.getQuerySetting("outdatedLimit"));
       
         outdatedTimestamp = Date.now()/1000 - thisResource.getQuerySetting("outdatedLimit");    
 
@@ -86,7 +84,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
             
             thisResource._do(cbfunc);
             
-            //console.log("fast lane");
+            thisResource._log("resource present in cache");
           
             thisResource._activeQuerySettings = {};
             thisResource._updateInProgress = false;
@@ -97,7 +95,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
                 
                 thisResource._do(cbfunc);
               
-                //console.log("fast lane");
+                thisResource._log("resource not in cahce. querying");
                 
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
@@ -107,6 +105,8 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         }
 
     } else {
+      
+        thisResource._log("update in progress "+thisResource._type+" "+thisResource._name)
         
         setTimeout(function(){
         
@@ -169,11 +169,17 @@ TwisterResource.prototype._handleError = function (error) {
     
 }
 
+TwisterResource.prototype._log = function (log) {
+    
+    this.getQuerySetting("logfunc").call(this,log);
+    
+}
+
 TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc) {
     
-    //console.log(method,params);
-  
 	var thisResource = this;
+  
+    thisResource._log("calling JSON-RPC "+method+" "+JSON.stringify(params));
 	
 	if (typeof errorFunc != "function") {
 	
@@ -239,8 +245,6 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
     
     var thisResource = this;
   
-    //console.log(thisResource._name+" "+thisResource._type)
-  
     if ( Twister._activeDHTQueries < Twister._maxDHTQueries ) {
     
         Twister._activeDHTQueries++;
@@ -257,6 +261,8 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                 
                 if (signatureVerification!="none" 
 					&& (args[2]="m" || (args[0]==signingUser) ) ) {
+                  
+                    thisResource._log("issuing signature verification");
                 
                     if (signatureVerification=="background") { cbfunc(res); }
 
@@ -281,9 +287,13 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 
                     });
                     
-                } else { cbfunc(res); }
+                } else { 
+                  
+                  thisResource._log("no signature verification needed");
+                  cbfunc(res); 
+                }
                 
-            }
+            } else { thisResource._handleError({message:"dht resource is empty"}); }
             
         }, function(error) {
             

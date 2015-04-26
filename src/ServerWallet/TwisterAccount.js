@@ -71,16 +71,16 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
     
     var thisAccount = this;
 
-    thisAccount.RPC("getfollowing", [ this._name ], function(res) {
+    thisAccount.RPC("getlasthave", [ this._name ], function(res) {
         
-		for (var i=0; i<res.length; i++) {
+		for (var name in res) {
 		
-			var torrent = Twister.getUser(res[i]).getTorrent();
+			var torrent = Twister.getUser(name).getTorrent();
             
             torrent._active = true ;
             torrent._followingName = thisAccount._name ;
-       
-        	torrent._lastUpdate = Date.now()/1000;
+            //torrent._latestId = res[name];       
+        	//torrent._lastUpdate = Date.now()/1000;
 			
 		}
 		
