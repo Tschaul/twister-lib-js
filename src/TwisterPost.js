@@ -7,7 +7,7 @@ var TwisterRetwists = require('./TwisterRetwists.js');
 
 /**
  * Describes a single post of a {@link TwisterUser}.
- * @class
+ * @module
  */
 function TwisterPost(data,scope) {
     
@@ -60,10 +60,18 @@ TwisterPost.prototype._queryAndDo = function (cbfunc) {
     cbfunc(this);
 }
 
+/** @function
+ * @name getId 
+ * @description returns the post id.
+ */
 TwisterPost.prototype.getId = function () {
     return this._data.k;
 }
 
+/** @function
+ * @name getId 
+ * @description returns the post id of the last post.
+ */
 TwisterPost.prototype.getLastId = function () {
 	if (!this._isPromotedPost) {
 		return this._data.lastk;
@@ -72,76 +80,163 @@ TwisterPost.prototype.getLastId = function () {
 	}
 }
 
+
+/** @function
+ * @name doPreviousPost 
+ * @description calls cbfunc with the previous post as argument. Queries the post if not in cache.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
 TwisterPost.prototype.doPreviousPost = function (cbfunc,querySettings) {
 	
 	if (!this._isPromotedPost) {
 		this._scope.getUser(this.getUsername()).doPost(this.getLastId(),cbfunc,querySettings);
 	} else {
+      //console.log(this)
 		this._scope.getPromotedPosts()._doPost(this.getLastId(),cbfunc,querySettings);
 	}
 	
 }
 
+/** @function
+ * @name getTimestamp 
+ * @description returns the timestamp of the post.
+ */
 TwisterPost.prototype.getTimestamp = function () {
     return this._data.time;
 }
 
+
+/** @function
+ * @name getContent 
+ * @description returns the content of the post.
+ */
 TwisterPost.prototype.getContent = function () {
     return this._data.msg;
 }
 
+
+/** @function
+ * @name getUsername 
+ * @description returns the user that posted the post.
+ */
 TwisterPost.prototype.getUsername = function () {
     return this._data.n;
 }
 
+
+/** @function
+ * @name isReply 
+ * @description returns true if the postis an reply.
+ */
 TwisterPost.prototype.isReply = function () {
     return ("reply" in this._data);
 }
 
+
+/** @function
+ * @name getReplyUser 
+ * @description returns the username of the user to which this post is a reply.
+ */
 TwisterPost.prototype.getReplyUser = function () {
     return this._data.reply.n;
 }
 
+
+/** @function
+ * @name getReplyId 
+ * @description returns the id of the post that this post is replying to.
+ */
 TwisterPost.prototype.getReplyId = function () {
     return this._data.reply.k;
 }
 
-TwisterPost.prototype.doReplies = function (cbfunc) {
-    this._replies._checkQueryAndDo(cbfunc);  
+
+/** @function
+ * @name doReplies 
+ * @description calls cbfunc for every post that is a reply to this post.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doReplies = function (cbfunc,querySettings) {
+    this._replies._checkQueryAndDo(cbfunc,querySettings);  
 }
 
-TwisterPost.prototype.doPostRepliedTo = function (cbfunc) {
-    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc);
+/** @function
+ * @name doPostRepliedTo 
+ * @description calls cbfunc with the post that this post is replying to.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doPostRepliedTo = function (cbfunc,querySettings) {
+    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc,querySettings);
 }
 
+/** @function
+ * @name isRetwist 
+ * @description returns true if the postis an rewtist.
+ */
 TwisterPost.prototype.isRetwist = function () {
     return ("rt" in this._data);
 }
 
+
+/** @function
+ * @name getRetwistedId 
+ * @description returns the id of the retwisted post.
+ */
 TwisterPost.prototype.getRetwistedId = function () {
     return this._data.rt.k;
 }
 
+/** @function
+ * @name getRetwistedlastId 
+ * @description returns the last id of the rewisted post.
+ */
 TwisterPost.prototype.getRetwistedlastId = function () {
     return this._data.rt.lastk;
 }
 
+/** @function
+ * @name getRetwistedTimestamp 
+ * @description returns the timestamp of the retwisted post
+ */
 TwisterPost.prototype.getRetwistedTimestamp = function () {
     return this._data.rt.time;
 }
 
+/** @function
+ * @name getRetwistedContent 
+ * @description returns content of the rwteisted post
+ */
 TwisterPost.prototype.getRetwistedContent = function () {
     return this._data.rt.msg;
 }
 
+/** @function
+ * @name getRetwistedUser 
+ * @description returns the username of the retwisted post.
+ */
 TwisterPost.prototype.getRetwistedUser = function () {
     return this._data.rt.n;
 }
 
-TwisterPost.prototype.doRetwistingPosts = function (cbfunc) {
-    this._retwists._checkQueryAndDo(cbfunc);
+/** @function
+ * @name doRetwistingPosts 
+ * @description calls cbfunc with an array of the post that are retwisting this post.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doRetwistingPosts = function (cbfunc,querySettings) {
+    this._retwists._checkQueryAndDo(cbfunc,querySettings);
 }
 
+
+/** @function
+ * @name doRetwistedPost 
+ * @description calls cbfunc the retwisted post.
+ * @param cbfunc {function} 
+ */
 TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
     
     var Twister = this._scope;

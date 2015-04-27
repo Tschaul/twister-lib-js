@@ -1,7 +1,7 @@
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
-var TwisterTorrent = require('./TwisterTorrent.js');
+//var TwisterTorrent = require('./TwisterTorrent.js');
 
 /**
  * Describes the stream of posts of a {@link TwisterUser}.
@@ -15,7 +15,7 @@ TwisterStream = function (name,scope) {
     this._posts = {};
     this._verified = true; //post are verified individually
     
-    this._torrent = new TwisterTorrent(name,scope);
+    this._activeTorrentUser = null;
     
     this._type = "stream";
 
@@ -35,7 +35,7 @@ TwisterStream.prototype.flatten = function () {
     
     flatData.posts = flatPosts;
     flatData.latestId  = this._latestId;
-    flatData.torrent  = this._torrent.flatten();
+    flatData.activeTorrentUser  = this._activeTorrentUser;
     
     
     return flatData;
@@ -45,27 +45,31 @@ TwisterStream.prototype.flatten = function () {
 
 TwisterStream.prototype.inflate = function (flatData) {
     
-    var Twister = this._scope;
-  
-    var TwisterPost = require('./TwisterPost.js');
-    
-    TwisterResource.prototype.inflate.call(this,flatData);
-    
-    this._latestId = flatData.latestId;
-    
-    for(var i = 0; i < flatData.posts.length; i++){
-        
-		if (flatData.posts[i].verified) {
-		
-			var newpost = new TwisterPost(flatData.posts[i].data,Twister);
-			newpost.inflate(flatData.posts[i]);
-			this._posts[newpost.getId()]=newpost;
-			
-		}
-    
+  var Twister = this._scope;
+
+  var TwisterPost = require('./TwisterPost.js');
+
+  TwisterResource.prototype.inflate.call(this,flatData);
+
+  this._latestId = flatData.latestId;
+  this._activeTorrentUser = flatData.activeTorrentUser;
+
+  for(var i = 0; i < flatData.posts.length; i++){
+
+    if (flatData.posts[i].verified) {
+
+      var newpost = new TwisterPost(flatData.posts[i].data,Twister);
+      newpost.inflate(flatData.posts[i]);
+      this._posts[newpost.getId()]=newpost;
+
+    } else if (flatData.posts[i].data.k==this._latestId) {
+
+      this._latestId = -1;
+      this._lastUpdate = -1;
+
     }
-    
-    this._torrent.inflate(flatData.torrent);
+
+  }
 
 }
 
@@ -75,11 +79,36 @@ TwisterStream.prototype._do =  function (cbfunc) {
     
 }
 
+TwisterStream.prototype.updateCache = function (cbfunc) {
+  
+  var Twister = this._scope;
+  
+  if (this._activeTorrentUser) {
+    Twister._wallet[this._activeTorrentUser]._torrents[this._name].updatePostsCache(cbfunc);
+  } else {
+    this._log("user has no active torrent")
+    cbfunc(false);
+  }
+
+}
+
+TwisterStream.prototype.fillCache = function (id,cbfunc) {
+  
+  var Twister = this._scope;
+  
+  if (this._activeTorrentUser) {
+    Twister._wallet[this._activeTorrentUser]._torrents[this._name].fillPostsCache(id,cbfunc);
+  } else {
+    cbfunc(false);
+  }
+
+}
+
 TwisterStream.prototype._queryAndDo = function (cbfunc) {
   
     var thisResource = this;
         
-    thisResource._torrent.updateCache(function(success){
+    thisResource.updateCache(function(success){
 
         if (success) {
             
@@ -94,7 +123,7 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
 
             thisResource.dhtget([thisResource._name, "status", "s"], function (result) {
 
-                    console.log(result);
+                    //console.log(result[0].p.v);
               
                     if (result[0]) {
 
@@ -145,7 +174,6 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
         thisResource._posts[newpost.getId()] = newpost;
       
-        
         if ( thisResource._latestId<newpost.getId() ) {
         
             thisResource._latestId=newpost.getId();
@@ -207,7 +235,7 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
 
       var thisResource = this;
 
-      thisResource._torrent.fillCache(id,function(success){
+      thisResource.fillCache(id,function(success){
 
         if (success) {
 

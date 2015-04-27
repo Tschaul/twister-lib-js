@@ -7,9 +7,14 @@ Twister.init({
 
 Twister.getUser("hn").doPost(13670,function(post){
     
-    post.doRetwistingPosts(function(post){
+    post.doRetwistingPosts(function(retwists){
     
-        console.log(post.getTimestamp()+": "+post.getUsername());
+        for (var i in retwists) {
+      
+          console.log(retwists[i].getTimestamp()+": "+retwists[i].getUsername());
+          
+        }
+      
     });
 
 });

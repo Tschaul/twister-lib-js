@@ -61,9 +61,11 @@ Twister._querySettingsByType = {
         profile: 60*60,
         avatar: 60*60,
         torrent: 60*60,
+        followings: 60*60
     }
     
 };
+Twister._logfunc = function(){};
 Twister._host = "";
 Twister._timeout = 20000;
 Twister._errorfunc = function(error){console.log("Twister error: "+error.message);};
@@ -71,7 +73,7 @@ Twister._errorfunc = function(error){console.log("Twister error: "+error.message
 Twister._walletType = "server";
 
 var availableOptions = ["host","timeout","errorfunc","signatureVerification",
-                        "querySettingsByType","maxDHTQueries","walletType"];
+                        "querySettingsByType","maxDHTQueries","walletType","logfunc"];
 
 var TwisterPromotedPosts = require("./TwisterPromotedPosts.js");
 Twister._promotedPosts = new TwisterPromotedPosts(Twister);
@@ -81,8 +83,8 @@ Twister._promotedPosts = new TwisterPromotedPosts(Twister);
  * @param {string} options.host endpoint for JSON-RPC queries used by default
  * @param {int} options.timeout timeout for JSON-RPC in milliseconds
  * @param {function} options.errorfunc called when JSON-RPC error occurs
- * @param {bool} options.verifySignatures
- * @param {bool} options.querySettingsByType
+ * @param {bool} options.verifySignatures possible options are "none","instant" and "background". Default is "background"
+ * @param {bool} options.querySettingsByType 
  * @param {bool} options.maxDHTQueries
  */
 Twister.init = function (options) {
@@ -106,15 +108,19 @@ Twister.init = function (options) {
  */
 Twister.getUser = function (username) {
     
-    if (Twister._userCache[username] === undefined) {
+    if (username) {
     
-        var TwisterUser = require('./TwisterUser.js');
-        
-        Twister._userCache[username] = new TwisterUser(username,Twister);
+        if (Twister._userCache[username] === undefined) {
 
+            var TwisterUser = require('./TwisterUser.js');
+
+            Twister._userCache[username] = new TwisterUser(username,Twister);
+
+        }
+
+        return Twister._userCache[username];
+        
     }
-    
-    return Twister._userCache[username];
 
 }
 
@@ -171,6 +177,22 @@ Twister.getAccount = function (name) {
 	}
 	
 	return Twister._wallet[name];
+}
+
+/** @function
+ * @name getAccounts 
+ * @description returns an array with all current {@link TwisterAccount} objects. To load wallets from the server use loadServerAccounts.
+ */
+Twister.getAccounts = function () {
+	
+  var res = [];
+  
+  for (var acc in Twister._wallet) {
+    res.push(acc);
+  }
+  
+  return res;
+  
 }
 
 /** @function
@@ -236,7 +258,7 @@ Twister.serializeCache = function () {
     
     var options = {};
     
-    for(vari in availableOptions) {
+    for(var i in availableOptions) {
         options[availableOptions[i]]=Twister["_"+availableOptions[i]];        
     }
     
@@ -253,7 +275,7 @@ Twister.serializeCache = function () {
 
 /** @function
  * @name serializeCache 
- * @description Reloads the cache from a flattened cached object
+ * @description Reloads the cache from a flattened cache object
  */
 Twister.deserializeCache = function (flatData) {
 
@@ -262,7 +284,7 @@ Twister.deserializeCache = function (flatData) {
         Twister.init(flatData.options);
         
         if (Twister._walletType=="server") {
-            var TwisterAccount = require('./ServerWallet/TwisterUser.js');
+            var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
         } else {
             Twister._handleError({message: "Unsupported wallet type."})
             return;
@@ -313,13 +335,13 @@ module.exports = Twister;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterAvatar.html">TwisterAvatar</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterFollowings.html">TwisterFollowings</a></li><li><a href="TwisterHashtag.html">TwisterHashtag</a></li><li><a href="TwisterMentions.html">TwisterMentions</a></li><li><a href="TwisterPost.html">TwisterPost</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Tue Apr 21 2015 09:10:15 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Mon Apr 27 2015 13:25:39 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

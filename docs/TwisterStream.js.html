@@ -29,7 +29,7 @@
             <pre class="prettyprint source linenums"><code>var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
-var TwisterTorrent = require('./TwisterTorrent.js');
+//var TwisterTorrent = require('./TwisterTorrent.js');
 
 /**
  * Describes the stream of posts of a {@link TwisterUser}.
@@ -43,7 +43,7 @@ TwisterStream = function (name,scope) {
     this._posts = {};
     this._verified = true; //post are verified individually
     
-    this._torrent = new TwisterTorrent(name,scope);
+    this._activeTorrentUser = null;
     
     this._type = "stream";
 
@@ -63,7 +63,7 @@ TwisterStream.prototype.flatten = function () {
     
     flatData.posts = flatPosts;
     flatData.latestId  = this._latestId;
-    flatData.torrent  = this._torrent.flatten();
+    flatData.activeTorrentUser  = this._activeTorrentUser;
     
     
     return flatData;
@@ -73,25 +73,31 @@ TwisterStream.prototype.flatten = function () {
 
 TwisterStream.prototype.inflate = function (flatData) {
     
-    var TwisterPost = require('./TwisterPost.js');
-    
-    TwisterResource.prototype.inflate.call(this,flatData);
-    
-    this._latestId = flatData.latestId;
-    
-    for(var i = 0; i &lt; flatData.posts.length; i++){
-        
-		if (flatData.posts[i].verified) {
-		
-			var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
-			newpost.inflate(flatData.posts[i]);
-			this._posts[newpost.getId()]=newpost;
-			
-		}
-    
+  var Twister = this._scope;
+
+  var TwisterPost = require('./TwisterPost.js');
+
+  TwisterResource.prototype.inflate.call(this,flatData);
+
+  this._latestId = flatData.latestId;
+  this._activeTorrentUser = flatData.activeTorrentUser;
+
+  for(var i = 0; i &lt; flatData.posts.length; i++){
+
+    if (flatData.posts[i].verified) {
+
+      var newpost = new TwisterPost(flatData.posts[i].data,Twister);
+      newpost.inflate(flatData.posts[i]);
+      this._posts[newpost.getId()]=newpost;
+
+    } else if (flatData.posts[i].data.k==this._latestId) {
+
+      this._latestId = -1;
+      this._lastUpdate = -1;
+
     }
-    
-    this._torrent.inflate(flatData.torrent);
+
+  }
 
 }
 
@@ -101,35 +107,69 @@ TwisterStream.prototype._do =  function (cbfunc) {
     
 }
 
-TwisterStream.prototype._queryAndDo = function (cbfunc) {
+TwisterStream.prototype.updateCache = function (cbfunc) {
+  
+  var Twister = this._scope;
+  
+  if (this._activeTorrentUser) {
+    Twister._wallet[this._activeTorrentUser]._torrents[this._name].updatePostsCache(cbfunc);
+  } else {
+    this._log("user has no active torrent")
+    cbfunc(false);
+  }
 
-    //console.log("inside stream query and do of "+this._name);
-    
+}
+
+TwisterStream.prototype.fillCache = function (id,cbfunc) {
+  
+  var Twister = this._scope;
+  
+  if (this._activeTorrentUser) {
+    Twister._wallet[this._activeTorrentUser]._torrents[this._name].fillPostsCache(id,cbfunc);
+  } else {
+    cbfunc(false);
+  }
+
+}
+
+TwisterStream.prototype._queryAndDo = function (cbfunc) {
+  
     var thisResource = this;
         
-    thisResource._torrent.updateCache(function(success){
+    thisResource.updateCache(function(success){
 
         if (success) {
             
+            thisResource._log("updating cache with torrent successfull")
+          
             thisResource._do(cbfunc);
+            thisResource._updateInProgress = false;
 
         } else {
+          
+            thisResource._log("updating cache with torrent failed")
 
             thisResource.dhtget([thisResource._name, "status", "s"], function (result) {
 
+                    console.log(result);
+              
                     if (result[0]) {
 
                         thisResource._verifyAndCachePost(result[0].p.v, function(newpost) {
 
                             thisResource._latestId = newpost.getId();
                             thisResource._lastUpdate = Date.now()/1000;
+                            thisResource._updateInProgress = false;
 
                             cbfunc(newpost);
 
                         });
 
 
-                    } else { cbfunc(null) }
+                    } else { 
+                      cbfunc(null);
+                      thisResource._updateInProgress = false;
+                    }
 
                 }
 
@@ -158,10 +198,10 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 		
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
+        var newpost = new TwisterPost(payload.userpost,Twister);
 
         thisResource._posts[newpost.getId()] = newpost;
-        
+      
         if ( thisResource._latestId&lt;newpost.getId() ) {
         
             thisResource._latestId=newpost.getId();
@@ -183,7 +223,7 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
 					if (verified) {
 
-						thisResource._verified=true;
+						newpost._verified=true;
 
 						if (cbfunc &amp;&amp; signatureVerification=="instant") { cbfunc(newpost); }
 
@@ -199,75 +239,73 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 				
 		}
  
+    } else {
+    
     }
 
 }
 
 TwisterStream.prototype._doPost = function (id,cbfunc) {
 
-    var Twister = this._scope;
-    
-    if (id &amp;&amp; id>0) {
+  var Twister = this._scope;
 
-        if (id in this._posts){
-            
-            cbfunc(this._posts[id])
-            
-            //console.log("post already in cache");
-            
+  if (id &amp;&amp; id>0) {
+
+    if (id in this._posts){
+
+      cbfunc(this._posts[id])
+
+      this._log("post already in cache");
+
+    } else {
+
+      this._log("post "+id+" not in cache");
+
+      var thisResource = this;
+
+      thisResource.fillCache(id,function(success){
+
+        if (success) {
+
+          thisResource._log("fill cache was successfull")
+
+          cbfunc(thisResource._posts[id])
+
         } else {
-            
-            var thisResource = this;
-            
-            thisResource._torrent.fillCache(id,function(success){
-        
-                if (success) {
 
-                    thisResource._doPost(thisResource._latestId,cbfunc);
+          thisResource.dhtget([thisResource._name, "post"+id, "s"],
 
-                } else {
+            function (result) {
 
-                    thisResource.dhtget([thisResource._name, "post"+id, "s"],
-                                   
-                        function (result) {
+              thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
 
-                            if (result[0]) {
+            }
 
-                                thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
-                                
-                            } else {
-                            
-                                cbfunc(null);
-                            
-                            }
+          ); 
 
-                        }
-                                   
-                    ); 
-                    
-                }
-                 
-            });
-            
         }
-        
+
+      });
+
     }
+
+  }
     
 };
 
 TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 
-	this._checkQueryAndDo(function doUntil(post){
-	
-		var retVal = cbfunc(post);
-		
-		if( post.getId()!=1 &amp;&amp; retVal!==false ) { 
-			
-			post.doPreviousPost(doUntil, querySettings); 
-			
-		}
-	
-	}, querySettings);
+  this._checkQueryAndDo(function doUntil(post){
+
+    var retVal = cbfunc(post);
+
+    if( post.getId()!=1 &amp;&amp; retVal!==false ) { 
+
+      post.doPreviousPost(doUntil, querySettings); 
+
+    }
+
+  }, querySettings);
 	
 }
 
@@ -283,13 +321,13 @@ module.exports = TwisterStream;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterAvatar.html">TwisterAvatar</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterFollowings.html">TwisterFollowings</a></li><li><a href="TwisterHashtag.html">TwisterHashtag</a></li><li><a href="TwisterMentions.html">TwisterMentions</a></li><li><a href="TwisterPost.html">TwisterPost</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Tue Apr 21 2015 09:10:15 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Mon Apr 27 2015 13:25:39 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

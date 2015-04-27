@@ -3,11 +3,15 @@
 Twister = require("../src/Twister.js")
 
 Twister.init({
-    host: 'http://user:pwd@127.0.0.1:28332',
-	signatureVerification: "background"
+    host: 'http://user:pwd@127.0.0.1:28332'
 });
 
 Twister.getUser("tschaul").doStatus(function(post){
     
-	//console.log(post._data)
+	if (post.isRetwist) {
+      console.log(post.getRetwistedContent())
+    } else {
+      console.log(post.getContent())
+    }
+      
 });

@@ -5,7 +5,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes a hashtag resource.
- * @class
+ * @module
  */
 TwisterHashtag = function (name,scope) {
     
@@ -63,6 +63,12 @@ TwisterHashtag.prototype._queryAndDo = function (cbfunc, querySettings) {
         
 }
 
+
+/** @function
+ * @name doPosts 
+ * @description calls cbfunc with every {@link TwisterPost} object of the hashtag.
+ * @param {function} cbfunc callback function
+ */
 TwisterHashtag.prototype.doPosts = function (cbfunc) {
 
 	var posts = [];

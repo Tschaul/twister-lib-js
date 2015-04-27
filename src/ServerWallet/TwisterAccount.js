@@ -21,6 +21,8 @@ function TwisterAccount(name,scope) {
 	this._privateFollowings = [];
 	
 	this._directmessages = {};
+  
+    this._torrents = {};
 
 }
 
@@ -40,6 +42,12 @@ TwisterAccount.prototype.flatten = function () {
     for (var username in this._directmessages){
         flatData.directmessages.push(this._directmessages[username].flatten());
     }
+  
+    flatData.torrents = [];
+    
+    for (var username in this._torrents){
+        flatData.torrents.push(this._torrents[username].flatten());
+    }
     
     return flatData;
 
@@ -54,16 +62,27 @@ TwisterAccount.prototype.inflate = function (flatData) {
     this._privateFollowings = flatData.privateFollowings;
 
     var TwisterDirectMessages = require('./TwisterDirectMessages.js');
+    var TwisterTorrent = require('./TwisterTorrent.js');
 
     for(var i in flatData.directmessages){
 
-        var newuser = new TwisterDirectMessages(flatData.directmessages[i].name,Twister);
+        var newuser = new TwisterDirectMessages(this._name,flatData.directmessages[i].name,Twister);
         newuser.inflate(flatData.directmessages[i]);
         this._directmessages[flatData.directmessages[i].name]=newuser;
 
     }
 
+    for(var i in flatData.torrents){
+
+        var newuser = new TwisterTorrent(this._name,flatData.torrents[i].name,Twister);
+        newuser.inflate(flatData.torrents[i]);
+        this._torrents[flatData.torrents[i].name]=newuser;
+
+    }
+
 }
+
+TwisterAccount.prototype.getUsername = function () {return this._name}
 
 TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
@@ -73,15 +92,18 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
     thisAccount.RPC("getlasthave", [ this._name ], function(res) {
         
-		for (var name in res) {
-		
-			var torrent = Twister.getUser(name).getTorrent();
-            
-            torrent._active = true ;
-            torrent._followingName = thisAccount._name ;
-            //torrent._latestId = res[name];       
-        	//torrent._lastUpdate = Date.now()/1000;
-			
+		for (var username in res) {
+          
+          var resTorrent = thisAccount.getTorrent(username);
+
+          resTorrent.activate();
+
+          resTorrent._latestId = res[username];       
+          resTorrent._lastUpdate = Date.now()/1000;  
+          resTorrent._updateInProgress = false;
+          
+          thisAccount._log("torrent for "+username+"activated");
+
 		}
 		
 		cbfunc();
@@ -144,6 +166,18 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 
 }
 
+TwisterAccount.prototype.getTorrent = function (username) {
+  
+  if( username in this._torrents ) {
+    return this._torrents[username];
+  } else {
+    var TwisterTorrent = require('./TwisterTorrent.js');
+    var newtorrent = new TwisterTorrent(this._name,username,this._scope);
+    this._torrents[username]=newtorrent;
+    return this._torrents[username];
+  }
+
+}
 
 TwisterAccount.prototype.getDirectMessages = function (username, cbfunc, querySettings) {
 

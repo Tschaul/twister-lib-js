@@ -35,9 +35,9 @@ var TwisterRetwists = require('./TwisterRetwists.js');
 
 /**
  * Describes a single post of a {@link TwisterUser}.
- * @class
+ * @module
  */
-function TwisterPost(data,signature,scope) {
+function TwisterPost(data,scope) {
     
     var name = data.n;
     var id = data.k;
@@ -88,10 +88,18 @@ TwisterPost.prototype._queryAndDo = function (cbfunc) {
     cbfunc(this);
 }
 
+/** @function
+ * @name getId 
+ * @description returns the post id.
+ */
 TwisterPost.prototype.getId = function () {
     return this._data.k;
 }
 
+/** @function
+ * @name getId 
+ * @description returns the post id of the last post.
+ */
 TwisterPost.prototype.getLastId = function () {
 	if (!this._isPromotedPost) {
 		return this._data.lastk;
@@ -100,6 +108,13 @@ TwisterPost.prototype.getLastId = function () {
 	}
 }
 
+
+/** @function
+ * @name doPreviousPost 
+ * @description calls cbfunc with the previous post as argument. Queries the post if not in cache.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
 TwisterPost.prototype.doPreviousPost = function (cbfunc,querySettings) {
 	
 	if (!this._isPromotedPost) {
@@ -110,66 +125,145 @@ TwisterPost.prototype.doPreviousPost = function (cbfunc,querySettings) {
 	
 }
 
+/** @function
+ * @name getTimestamp 
+ * @description returns the timestamp of the post.
+ */
 TwisterPost.prototype.getTimestamp = function () {
     return this._data.time;
 }
 
+
+/** @function
+ * @name getContent 
+ * @description returns the content of the post.
+ */
 TwisterPost.prototype.getContent = function () {
     return this._data.msg;
 }
 
+
+/** @function
+ * @name getUsername 
+ * @description returns the user that posted the post.
+ */
 TwisterPost.prototype.getUsername = function () {
     return this._data.n;
 }
 
+
+/** @function
+ * @name isReply 
+ * @description returns true if the postis an reply.
+ */
 TwisterPost.prototype.isReply = function () {
     return ("reply" in this._data);
 }
 
+
+/** @function
+ * @name getReplyUser 
+ * @description returns the username of the user to which this post is a reply.
+ */
 TwisterPost.prototype.getReplyUser = function () {
     return this._data.reply.n;
 }
 
+
+/** @function
+ * @name getReplyId 
+ * @description returns the id of the post that this post is replying to.
+ */
 TwisterPost.prototype.getReplyId = function () {
     return this._data.reply.k;
 }
 
-TwisterPost.prototype.doReplies = function (cbfunc) {
-    this._replies._checkQueryAndDo(cbfunc);  
+
+/** @function
+ * @name doReplies 
+ * @description calls cbfunc for every post that is a reply to this post.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doReplies = function (cbfunc,querySettings) {
+    this._replies._checkQueryAndDo(cbfunc,querySettings);  
 }
 
-TwisterPost.prototype.doPostRepliedTo = function (cbfunc) {
-    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc);
+/** @function
+ * @name doPostRepliedTo 
+ * @description calls cbfunc with the post that this post is replying to.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doPostRepliedTo = function (cbfunc,querySettings) {
+    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc,querySettings);
 }
 
+/** @function
+ * @name isRetwist 
+ * @description returns true if the postis an rewtist.
+ */
 TwisterPost.prototype.isRetwist = function () {
     return ("rt" in this._data);
 }
 
+
+/** @function
+ * @name getRetwistedId 
+ * @description returns the id of the retwisted post.
+ */
 TwisterPost.prototype.getRetwistedId = function () {
     return this._data.rt.k;
 }
 
+/** @function
+ * @name getRetwistedlastId 
+ * @description returns the last id of the rewisted post.
+ */
 TwisterPost.prototype.getRetwistedlastId = function () {
     return this._data.rt.lastk;
 }
 
+/** @function
+ * @name getRetwistedTimestamp 
+ * @description returns the timestamp of the retwisted post
+ */
 TwisterPost.prototype.getRetwistedTimestamp = function () {
     return this._data.rt.time;
 }
 
+/** @function
+ * @name getRetwistedContent 
+ * @description returns content of the rwteisted post
+ */
 TwisterPost.prototype.getRetwistedContent = function () {
     return this._data.rt.msg;
 }
 
+/** @function
+ * @name getRetwistedUser 
+ * @description returns the username of the retwisted post.
+ */
 TwisterPost.prototype.getRetwistedUser = function () {
     return this._data.rt.n;
 }
 
-TwisterPost.prototype.doRetwistingPosts = function (cbfunc) {
-    this._retwists._checkQueryAndDo(cbfunc);
+/** @function
+ * @name doRetwistingPosts 
+ * @description calls cbfunc with every post that is retwisting this post.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doRetwistingPosts = function (cbfunc,querySettings) {
+    this._retwists._checkQueryAndDo(cbfunc,querySettings);
 }
 
+
+/** @function
+ * @name doRetwistedPost 
+ * @description calls cbfunc the retwisted post.
+ * @param cbfunc {function} 
+ */
 TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
     
     var Twister = this._scope;
@@ -202,13 +296,13 @@ TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterAvatar.html">TwisterAvatar</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterFollowings.html">TwisterFollowings</a></li><li><a href="TwisterHashtag.html">TwisterHashtag</a></li><li><a href="TwisterMentions.html">TwisterMentions</a></li><li><a href="TwisterPost.html">TwisterPost</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Tue Apr 21 2015 09:10:15 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Mon Apr 27 2015 13:25:39 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

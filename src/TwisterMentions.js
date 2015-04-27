@@ -4,7 +4,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes the mentions of a {@link TwisterUser}.
- * @class
+ * @module
  */
 TwisterMentions = function (name,scope) {
     
@@ -63,6 +63,11 @@ TwisterMentions.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+/** @function
+ * @name doPosts 
+ * @description calls cbfunc with every {@link TwisterPost} object of the mentions.
+ * @param {function} cbfunc callback function
+ */
 TwisterMentions.prototype.doPosts = function (cbfunc) {
 
 	var posts = [];

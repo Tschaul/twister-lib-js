@@ -112,9 +112,11 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
     
     if( !( newid in thisResource._posts) ) {
 
+		var signatureVerification = thisResource.getQuerySetting("signatureVerification");
+
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
+        var newpost = new TwisterPost(payload.userpost,thisResource._scope);
 
 		newpost._isPromotedPost = true;
 		
@@ -132,7 +134,7 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
 
         } else {
         
-			if (signatureVerification=="background") { cbfunc(newpost); }
+			if (cbfunc && signatureVerification=="background") { cbfunc(newpost); }
 			
 			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
 
@@ -206,17 +208,17 @@ TwisterPromotedPosts.prototype._doPost = function (id,cbfunc) {
 
 TwisterPromotedPosts.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {
 
-	Twister._promotedPosts._checkQueryAndDo(function doUntil(post){
-	
-		var retVal = cbfunc(post);
-		
-		if( post.getId()!=1 && retVal!==false ) { 
-			
-			post.doPreviousPost(doUntil, querySettings); 
-			
-		}
-	
-	}, querySettings);
+  Twister._promotedPosts._checkQueryAndDo(function doUntil(post){
+
+    var retVal = cbfunc(post);
+
+    if( post.getId()!=1 && retVal!==false ) { 
+
+      post.doPreviousPost(doUntil, querySettings); 
+
+    }
+
+  }, querySettings);
 	
 }
 

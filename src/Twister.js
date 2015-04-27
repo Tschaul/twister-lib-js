@@ -45,7 +45,7 @@ Twister._errorfunc = function(error){console.log("Twister error: "+error.message
 Twister._walletType = "server";
 
 var availableOptions = ["host","timeout","errorfunc","signatureVerification",
-                        "querySettingsByType","maxDHTQueries","walletType"];
+                        "querySettingsByType","maxDHTQueries","walletType","logfunc"];
 
 var TwisterPromotedPosts = require("./TwisterPromotedPosts.js");
 Twister._promotedPosts = new TwisterPromotedPosts(Twister);
@@ -55,8 +55,8 @@ Twister._promotedPosts = new TwisterPromotedPosts(Twister);
  * @param {string} options.host endpoint for JSON-RPC queries used by default
  * @param {int} options.timeout timeout for JSON-RPC in milliseconds
  * @param {function} options.errorfunc called when JSON-RPC error occurs
- * @param {bool} options.verifySignatures
- * @param {bool} options.querySettingsByType
+ * @param {bool} options.verifySignatures possible options are "none","instant" and "background". Default is "background"
+ * @param {bool} options.querySettingsByType 
  * @param {bool} options.maxDHTQueries
  */
 Twister.init = function (options) {
@@ -152,6 +152,22 @@ Twister.getAccount = function (name) {
 }
 
 /** @function
+ * @name getAccounts 
+ * @description returns an array with all current {@link TwisterAccount} objects. To load wallets from the server use loadServerAccounts.
+ */
+Twister.getAccounts = function () {
+	
+  var res = [];
+  
+  for (var acc in Twister._wallet) {
+    res.push(acc);
+  }
+  
+  return res;
+  
+}
+
+/** @function
  * @name loadAccounts 
  * @description loads available account into the wallet. 
  */
@@ -231,7 +247,7 @@ Twister.serializeCache = function () {
 
 /** @function
  * @name serializeCache 
- * @description Reloads the cache from a flattened cached object
+ * @description Reloads the cache from a flattened cache object
  */
 Twister.deserializeCache = function (flatData) {
 

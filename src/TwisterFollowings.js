@@ -4,7 +4,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes the followings of a {@link TwisterUser}
- * @class
+ * @module
  */
 TwisterFollowings = function (name,scope) {
     
@@ -63,12 +63,22 @@ TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+
+/** @function
+ * @name getNames 
+ * @description returns the usernames of the following users
+ */
 TwisterFollowings.prototype.getNames = function () {
 
     return this._data;
     
 }
 
+/** @function
+ * @name doUsers 
+ * @description calls cbfunc with every {@link TwisterUser} object of the following users.
+ * @param {function} cbfunc callback function
+ */
 TwisterFollowings.prototype.doUsers = function(cbfunc) {
 
     var Twister = this._scope;

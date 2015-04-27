@@ -54,19 +54,21 @@ TwisterPubKey.prototype._queryAndDo = function (cbfunc) {
             
     thisResource.RPC("dumppubkey", [ thisResource._name ], function(res) {
 
-        //var TwisterCrypto = require('./TwisterCrypto.js');
-        //console.log(res);
-        thisResource._lastUpdate = Date.now()/1000;
-        
-        thisResource._data = res;
-        
-        thisResource._btcKey = Bitcoin.ECPubKey.fromHex(res);
+        if(res.length) {
+      
+          thisResource._lastUpdate = Date.now()/1000;
 
-        if (cbfunc) {
+          thisResource._data = res;
 
-            cbfunc(thisResource);
+          thisResource._btcKey = Bitcoin.ECPubKey.fromHex(res);
 
-        }
+          if (cbfunc) {
+
+              cbfunc(thisResource);
+
+          }
+          
+        } else { thisResource._handleError({message:"pubkey not available on server"}) }
 		
     }, function(ret) {
 
@@ -130,7 +132,7 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
             var retVal = false;	
 
-            console.log(message);
+            thisPubKey._handleError({message:message});
 
         }
 

@@ -4,7 +4,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes the avatar of a {@link TwisterUser}.
- * @class
+ * @module 
  */
 TwisterAvatar = function (name,scope) {
     
@@ -52,6 +52,10 @@ TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+/** @function
+ * @name getUrl 
+ * @description return the (data-)url of the avatar
+ */
 TwisterAvatar.prototype.getUrl = function () {
 
     return this._data;

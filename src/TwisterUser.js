@@ -67,10 +67,6 @@ TwisterUser.prototype.getUsername = function () {
     return this._name;
 }
 
-TwisterUser.prototype.getTorrent = function () {
-    return this._stream._torrent;
-}
-
 TwisterUser.prototype._doPubKey = function (cbfunc, querySettings) {
     this._pubkey._checkQueryAndDo(cbfunc, querySettings);
 }
@@ -88,7 +84,6 @@ TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
 };
 
 TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
-  console.log("doing status")
     this._stream._checkQueryAndDo(cbfunc, querySettings);
 };
 

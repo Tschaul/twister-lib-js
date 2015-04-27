@@ -29692,6 +29692,8 @@ function TwisterAccount(name,scope) {
 	this._privateFollowings = [];
 	
 	this._directmessages = {};
+  
+    this._torrents = {};
 
 }
 
@@ -29711,6 +29713,12 @@ TwisterAccount.prototype.flatten = function () {
     for (var username in this._directmessages){
         flatData.directmessages.push(this._directmessages[username].flatten());
     }
+  
+    flatData.torrents = [];
+    
+    for (var username in this._torrents){
+        flatData.torrents.push(this._torrents[username].flatten());
+    }
     
     return flatData;
 
@@ -29725,16 +29733,27 @@ TwisterAccount.prototype.inflate = function (flatData) {
     this._privateFollowings = flatData.privateFollowings;
 
     var TwisterDirectMessages = require('./TwisterDirectMessages.js');
+    var TwisterTorrent = require('./TwisterTorrent.js');
 
     for(var i in flatData.directmessages){
 
-        var newuser = new TwisterDirectMessages(flatData.directmessages[i].name,Twister);
+        var newuser = new TwisterDirectMessages(this._name,flatData.directmessages[i].name,Twister);
         newuser.inflate(flatData.directmessages[i]);
         this._directmessages[flatData.directmessages[i].name]=newuser;
 
     }
 
+    for(var i in flatData.torrents){
+
+        var newuser = new TwisterTorrent(this._name,flatData.torrents[i].name,Twister);
+        newuser.inflate(flatData.torrents[i]);
+        this._torrents[flatData.torrents[i].name]=newuser;
+
+    }
+
 }
+
+TwisterAccount.prototype.getUsername = function () {return this._name}
 
 TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
@@ -29744,15 +29763,18 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
     thisAccount.RPC("getlasthave", [ this._name ], function(res) {
         
-		for (var name in res) {
-		
-			var torrent = Twister.getUser(name).getTorrent();
-            
-            torrent._active = true ;
-            torrent._followingName = thisAccount._name ;
-            //torrent._latestId = res[name];       
-        	//torrent._lastUpdate = Date.now()/1000;
-			
+		for (var username in res) {
+          
+          var resTorrent = thisAccount.getTorrent(username);
+
+          resTorrent.activate();
+
+          resTorrent._latestId = res[username];       
+          resTorrent._lastUpdate = Date.now()/1000;  
+          resTorrent._updateInProgress = false;
+          
+          thisAccount._log("torrent for "+username+"activated");
+
 		}
 		
 		cbfunc();
@@ -29815,6 +29837,18 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 
 }
 
+TwisterAccount.prototype.getTorrent = function (username) {
+  
+  if( username in this._torrents ) {
+    return this._torrents[username];
+  } else {
+    var TwisterTorrent = require('./TwisterTorrent.js');
+    var newtorrent = new TwisterTorrent(this._name,username,this._scope);
+    this._torrents[username]=newtorrent;
+    return this._torrents[username];
+  }
+
+}
 
 TwisterAccount.prototype.getDirectMessages = function (username, cbfunc, querySettings) {
 
@@ -29843,7 +29877,7 @@ TwisterAccount.prototype.doLatestDirectMessagesUntil = function (username, cbfun
 	this.getDirectMessages(username)._doUntil(cbfunc, querySettings);
 
 }
-},{"../TwisterResource.js":151,"./TwisterDirectMessages.js":140,"inherits":52}],140:[function(require,module,exports){
+},{"../TwisterResource.js":152,"./TwisterDirectMessages.js":140,"./TwisterTorrent.js":141,"inherits":52}],140:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('../TwisterResource.js');
@@ -30080,7 +30114,424 @@ TwisterDirectMessages.prototype._doUntil = function (cbfunc, querySettings) {
 module.exports = TwisterDirectMessages;
 
 
-},{"../TwisterPost.js":146,"../TwisterResource.js":151,"inherits":52}],141:[function(require,module,exports){
+},{"../TwisterPost.js":147,"../TwisterResource.js":152,"inherits":52}],141:[function(require,module,exports){
+//'use strict';
+
+var inherits = require('inherits');
+var TwisterResource = require('../TwisterResource.js');
+
+/**
+ * Describes the torrent of the {@link TwisterPosts} of a {@link TwisterUser} when available on the host. The torrent significantly speeds up post querying time. It is implemented as a look-ahead that is queryied when accessing a post that is not already in cache.
+ * @class
+ */
+TwisterTorrent = function (walletusername,name,scope) {
+    
+  this._hasParentUser = true;
+
+  this._walletusername = walletusername;
+
+  TwisterResource.call(this,name,scope);
+
+  this._latestId = -1;
+  this._messages = {};
+    
+  
+  this._active = false;
+  this._type = "torrent";
+
+}
+
+inherits(TwisterTorrent,TwisterResource);
+
+module.exports = TwisterTorrent;
+
+TwisterTorrent.prototype.flatten = function () {
+
+  var flatData = TwisterResource.prototype.flatten.call(this);
+
+  flatData.active = this._active;
+
+  return flatData;
+    
+}
+
+TwisterTorrent.prototype.inflate = function (flatData) {
+
+  TwisterResource.prototype.inflate.call(this,flatData);
+
+  this._active = flatData.active;
+
+}
+
+TwisterTorrent.prototype.activate = function () {
+  
+  this._active = true;
+  var thisStream = Twister.getUser(this._name)._stream;
+  thisStream._activeTorrentUser = this._walletusername;
+
+}
+
+TwisterTorrent.prototype.deactivate = function () {
+  
+  this._active = false;
+  
+  var foundReplacement = false;
+  
+  for (var username in Twister._wallet){
+
+    if (this._name in Twister._wallet[username]._torrents) {
+      if (Twister._wallet[username]._torrents[this._name]._active) {
+        Twister.getUser(this._name)._stream._activeTorrentUser=username;
+        foundReplacement = true;
+      }
+    }
+  }
+  
+  if (!foundReplacement) {
+    var thisStream = Twister.getUser(this._name)._stream;
+    thisStream._activeTorrentUser = null;
+  }
+
+}
+
+TwisterTorrent.prototype.getQuerySetting = function (setting) {
+
+  //console.log(this._name);
+
+  var Twister = this._scope;
+
+  if (setting in this._activeQuerySettings) {
+    return this._activeQuerySettings[setting];
+  }
+
+  if (setting in this._querySettings) {
+    return this._querySettings[setting];
+  }
+
+  if (setting in Twister.getAccount(this._walletusername)._querySettings) {
+    return Twister.getAccount(this._walletusername)._querySettings[setting];
+  }
+
+  if (setting in Twister.getUser(this._name)._stream._activeQuerySettings) {
+    return Twister.getUser(this._name)._stream._activeQuerySettings[setting];
+  }
+
+  if (setting in Twister.getUser(this._name)._stream._querySettings) {
+    return Twister.getUser(this._name)._stream._querySettings[setting];
+  }
+
+  return TwisterResource.prototype.getQuerySetting.call(this,setting);
+
+}
+
+TwisterTorrent.prototype._queryAndDo = function (cbfunc) {
+
+  var Twister = this._scope;
+
+  var thisTorrent = this;
+  
+  var thisAccount = Twister.getAccount(this._walletusername);
+  
+  if (thisTorrent._active) {
+    
+    thisTorrent._log("locking torrents of same account")
+    
+    for (var username in thisAccount._torrents){
+
+      if (thisAccount._torrents[username]._active) {              
+          thisAccount._torrents[username]._updateInProgress = true;
+      }
+    }
+
+    thisTorrent.RPC("getlasthave", [ this._walletusername ], function(res) {
+
+      if (thisTorrent._name in res) { 
+
+        thisTorrent._active = true ;
+        
+        thisTorrent._log("updating other torrents based on getlasthave result")
+        
+        for (var username in res) {
+
+          var resTorrent = thisAccount._torrents[username];
+
+          if (resTorrent._active) {
+
+            resTorrent._latestId = res[username];       
+            resTorrent._lastUpdate = Date.now()/1000;  
+            resTorrent._updateInProgress = false;
+
+          }
+          
+        }
+        
+
+      } else {
+
+        thisTorrent._active = false ;
+        thisTorrent._followingName = null ;
+        thisTorrent._handleError({mesage:"Torrent not active on server"});
+
+      }
+      
+      thisTorrent._log("unlocking torrents with same following name")
+      
+      for (var username in thisAccount._torrents){
+
+      if (thisAccount._torrents[username]._active) {              
+          thisAccount._torrents[username]._updateInProgress = false;
+      }
+    }
+
+      if (cbfunc) {
+
+        thisTorrent._do(cbfunc);
+
+      }
+
+    }, function(ret) {
+
+      thisTorrent._handleError(ret);
+
+    });
+    
+  } else {
+     
+    thisTorrent._handleError({message: "Activate torrent first"});
+    
+  }
+
+}
+
+TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,requests,cbfunc) {
+
+  var Twister = this._scope;
+
+  var thisTorrent = this;
+  var thisStream = Twister.getUser(this._name)._stream;
+
+  if (thisTorrent._active) {
+
+    thisStream._log("querying getposts for "+requests.length+" users")
+
+    for (var i in requests){
+      Twister.getUser(requests[i].username)._stream._updateInProgress = true;    
+    }
+
+    thisTorrent.RPC("getposts", [ count , requests ], function(res) {
+
+      var minIds = {};
+
+      if (res.length>0) {
+
+        for (var i in res) {
+
+          var resUsername = res[i].userpost.n;
+          var resId = res[i].userpost.k;
+
+          if (resUsername in minIds) {
+            minIds[resUsername]=Math.min(resId,minIds[resUsername]);
+          } else {
+            minIds[resUsername]=resId;
+          }
+
+          var resStream = Twister.getUser(res[i].userpost.n)._stream;
+
+          resStream._verifyAndCachePost(res[i]);
+
+        }
+
+        if (res.length<count) {
+
+          thisStream._log("got all posts, no need to requery");
+
+          for (var i in requests){
+            if ( !requests.max_id || requests.max_id==-1 ) {
+              Twister.getUser(requests[i].username)._stream._lastUpdate = Date.now()/1000;
+              Twister.getUser(requests[i].username)._stream._updateInProgress = false;
+            }
+          }
+
+          cbfunc(true);
+
+        } else {
+
+          var newrequests = [];
+
+          for (var i in requests){
+
+            if (!(requests[i].username in minIds)) {
+              newrequests.push(requests[i]);
+            } else {
+              Twister.getUser(requests[i].username)._stream._lastUpdate = Date.now()/1000;
+              Twister.getUser(requests[i].username)._stream._updateInProgress = false;
+            }
+
+
+            if ( !requests.max_id || requests.max_id==-1 ) {
+              Twister.getUser(requests[i].username)._stream._lastUpdate = Date.now()/1000;
+              Twister.getUser(requests[i].username)._stream._updateInProgress = false;
+            }
+
+
+          }
+
+          if (newrequests.length) {
+
+            thisStream._log("incomplete result. requerying");
+
+            setTimeout(function(){
+              thisTorrent._fillCacheUsingGetposts(count,newrequests,cbfunc);
+            },200);
+
+          } else {
+
+            thisStream._log("count full but ok");
+
+            cbfunc(true);
+
+          }
+
+        }
+
+      } else {
+
+        thisStream._log("getposts gave an empty result")
+
+      }
+
+    }, function(ret) {
+
+        thisStream._handleError(ret);
+
+    });
+
+  } else {
+
+    cbfunc(false);
+
+  }
+    
+}
+
+TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
+
+  var Twister = this._scope;
+
+  var thisTorrent = this;
+  var thisStream = Twister.getUser(this._name)._stream;
+  var thisAccount = Twister.getAccount(this._walletusername);
+    
+  
+  for (var username in thisAccount._torrents){
+
+    if (thisAccount._torrents[username]._active) {              
+        Twister.getUser(username)._stream._updateInProgress = true;
+    }
+  }
+  
+  thisTorrent._checkQueryAndDo( function() {
+
+    if (thisTorrent._active) {
+
+      var outdatedUsers =[];
+
+      for (var username in thisAccount._torrents) {
+
+        var resTorrent = thisAccount._torrents[username];
+
+        if (resTorrent._active) {
+
+          resTorrent._latestId = resTorrent._latestId;       
+          resTorrent._lastUpdate = Date.now()/1000;  
+          resTorrent._updateInProgress = false;
+
+        }
+
+        if (resTorrent._latestId==Twister.getUser(username)._stream._latestId) {
+
+          Twister.getUser(username)._stream._lastUpdate=Date.now()/1000;
+          Twister.getUser(username)._stream._updateInProgress=false;
+
+        } else {
+
+          outdatedUsers.push({username:username});
+
+        }
+
+      }
+
+      thisTorrent._fillCacheUsingGetposts(30,outdatedUsers,function(){
+
+          cbfunc(true);
+
+          for (var username in thisAccount._torrents){
+
+            if (thisAccount._torrents[username]._active) {              
+                Twister.getUser(username)._stream._updateInProgress = false;
+            }
+          }
+
+      });
+
+    } else {
+
+      cbfunc(false);
+
+    }
+
+    for (var username in thisAccount._torrents){
+
+      if (thisAccount._torrents[username]._active) {              
+          Twister.getUser(username)._stream._updateInProgress = false;
+      }
+    }
+
+  });
+    
+}
+
+TwisterTorrent.prototype.updatePostsCache = function (cbfunc) {
+    
+  var Twister = this._scope;
+
+  var thisTorrent = this;
+  var thisStream = Twister.getUser(this._name)._stream;
+
+  thisStream._log("update posts cache "+thisStream._name)  
+
+  thisTorrent._checkForUpdatesUsingGetLastHave(function(uptodate){
+
+    if (uptodate) {
+    thisStream._log("lasthaves "+thisTorrent._name+" worked") 
+
+      cbfunc(true);
+
+    } else {
+    thisStream._log("lasthaves "+thisTorrent._name+" failed") 
+
+      thisTorrent._fillCacheUsingGetposts(30,[{username:thisTorrent._name}],cbfunc);
+
+    }
+
+  });
+    
+}
+
+TwisterTorrent.prototype.fillPostsCache = function (id,cbfunc) {
+
+  var Twister = this._scope;
+
+  var thisTorrent = this;
+  var thisUser = Twister.getUser(this._name);
+  var thisStream = Twister.getUser(this._name)._stream;
+
+  thisStream._log("fill cache "+thisTorrent._name+" id "+id)  
+
+  thisTorrent._fillCacheUsingGetposts(30,[{username:thisTorrent._name,max_id:id}],cbfunc);
+
+}
+},{"../TwisterResource.js":152,"inherits":52}],142:[function(require,module,exports){
 'use strict';
 
 /**
@@ -30128,7 +30579,7 @@ Twister._errorfunc = function(error){console.log("Twister error: "+error.message
 Twister._walletType = "server";
 
 var availableOptions = ["host","timeout","errorfunc","signatureVerification",
-                        "querySettingsByType","maxDHTQueries","walletType"];
+                        "querySettingsByType","maxDHTQueries","walletType","logfunc"];
 
 var TwisterPromotedPosts = require("./TwisterPromotedPosts.js");
 Twister._promotedPosts = new TwisterPromotedPosts(Twister);
@@ -30232,6 +30683,22 @@ Twister.getAccount = function (name) {
 	}
 	
 	return Twister._wallet[name];
+}
+
+/** @function
+ * @name getAccounts 
+ * @description returns an array with all current {@link TwisterAccount} objects. To load wallets from the server use loadServerAccounts.
+ */
+Twister.getAccounts = function () {
+	
+  var res = [];
+  
+  for (var acc in Twister._wallet) {
+    res.push(acc);
+  }
+  
+  return res;
+  
 }
 
 /** @function
@@ -30365,7 +30832,7 @@ Twister.deserializeCache = function (flatData) {
 
 module.exports = Twister;
 
-},{"./ServerWallet/TwisterAccount.js":139,"./TwisterHashtag.js":144,"./TwisterPromotedPosts.js":148,"./TwisterResource.js":151,"./TwisterUser.js":155}],142:[function(require,module,exports){
+},{"./ServerWallet/TwisterAccount.js":139,"./TwisterHashtag.js":145,"./TwisterPromotedPosts.js":149,"./TwisterResource.js":152,"./TwisterUser.js":155}],143:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -30425,7 +30892,7 @@ TwisterAvatar.prototype.getUrl = function () {
     return this._data;
     
 }
-},{"./TwisterResource.js":151,"inherits":52}],143:[function(require,module,exports){
+},{"./TwisterResource.js":152,"inherits":52}],144:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -30516,7 +30983,7 @@ TwisterFollowings.prototype.doUsers = function(cbfunc) {
 }
 
 module.exports = TwisterFollowings;
-},{"./TwisterResource.js":151,"inherits":52}],144:[function(require,module,exports){
+},{"./TwisterResource.js":152,"inherits":52}],145:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -30601,7 +31068,7 @@ TwisterHashtag.prototype.doPosts = function (cbfunc) {
 }
 
 module.exports = TwisterHashtag;
-},{"./TwisterPost.js":146,"./TwisterResource.js":151,"inherits":52}],145:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],146:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -30686,7 +31153,7 @@ TwisterMentions.prototype.doPosts = function (cbfunc) {
 }
 
 module.exports = TwisterMentions;
-},{"./TwisterPost.js":146,"./TwisterResource.js":151,"inherits":52}],146:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],147:[function(require,module,exports){
 "use strict";
 
 var inherits = require('inherits');
@@ -30854,7 +31321,7 @@ TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
     
 }
 
-},{"./TwisterReplies.js":150,"./TwisterResource.js":151,"./TwisterRetwists.js":152,"inherits":52}],147:[function(require,module,exports){
+},{"./TwisterReplies.js":151,"./TwisterResource.js":152,"./TwisterRetwists.js":153,"inherits":52}],148:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -30921,7 +31388,7 @@ TwisterProfile.prototype.getField = function (fieldname) {
     return this._data[fieldname];
     
 }
-},{"./TwisterResource.js":151,"inherits":52}],148:[function(require,module,exports){
+},{"./TwisterResource.js":152,"inherits":52}],149:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -31147,7 +31614,7 @@ TwisterPromotedPosts.prototype.doLatestPostsUntil = function (cbfunc, querySetti
 module.exports = TwisterPromotedPosts;
 
 
-},{"./TwisterPost.js":146,"./TwisterResource.js":151,"inherits":52}],149:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],150:[function(require,module,exports){
 (function (Buffer){
 var inherits = require('inherits');
 
@@ -31299,7 +31766,7 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
 }
 }).call(this,require("buffer").Buffer)
-},{"./TwisterResource.js":151,"bencode":1,"bitcoinjs-lib":43,"buffer":172,"crypto":178,"inherits":52}],150:[function(require,module,exports){
+},{"./TwisterResource.js":152,"bencode":1,"bitcoinjs-lib":43,"buffer":172,"crypto":178,"inherits":52}],151:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -31404,7 +31871,7 @@ TwisterReplies.prototype.doPosts = function (cbfunc) {
 }
 
 module.exports = TwisterReplies;
-},{"./TwisterPost.js":146,"./TwisterResource.js":151,"inherits":52}],151:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],152:[function(require,module,exports){
 "use strict";
 
 /**
@@ -31720,7 +32187,7 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
     }
 
 }
-},{"request":53}],152:[function(require,module,exports){
+},{"request":53}],153:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -31824,11 +32291,11 @@ TwisterRetwists.prototype.doPosts = function (cbfunc) {
 }
 
 module.exports = TwisterRetwists;
-},{"./TwisterPost.js":146,"./TwisterResource.js":151,"inherits":52}],153:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],154:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
-var TwisterTorrent = require('./TwisterTorrent.js');
+//var TwisterTorrent = require('./TwisterTorrent.js');
 
 /**
  * Describes the stream of posts of a {@link TwisterUser}.
@@ -31842,7 +32309,7 @@ TwisterStream = function (name,scope) {
     this._posts = {};
     this._verified = true; //post are verified individually
     
-    this._torrent = new TwisterTorrent(name,scope);
+    this._activeTorrentUser = null;
     
     this._type = "stream";
 
@@ -31862,7 +32329,7 @@ TwisterStream.prototype.flatten = function () {
     
     flatData.posts = flatPosts;
     flatData.latestId  = this._latestId;
-    flatData.torrent  = this._torrent.flatten();
+    flatData.activeTorrentUser  = this._activeTorrentUser;
     
     
     return flatData;
@@ -31872,27 +32339,31 @@ TwisterStream.prototype.flatten = function () {
 
 TwisterStream.prototype.inflate = function (flatData) {
     
-    var Twister = this._scope;
-  
-    var TwisterPost = require('./TwisterPost.js');
-    
-    TwisterResource.prototype.inflate.call(this,flatData);
-    
-    this._latestId = flatData.latestId;
-    
-    for(var i = 0; i < flatData.posts.length; i++){
-        
-		if (flatData.posts[i].verified) {
-		
-			var newpost = new TwisterPost(flatData.posts[i].data,Twister);
-			newpost.inflate(flatData.posts[i]);
-			this._posts[newpost.getId()]=newpost;
-			
-		}
-    
+  var Twister = this._scope;
+
+  var TwisterPost = require('./TwisterPost.js');
+
+  TwisterResource.prototype.inflate.call(this,flatData);
+
+  this._latestId = flatData.latestId;
+  this._activeTorrentUser = flatData.activeTorrentUser;
+
+  for(var i = 0; i < flatData.posts.length; i++){
+
+    if (flatData.posts[i].verified) {
+
+      var newpost = new TwisterPost(flatData.posts[i].data,Twister);
+      newpost.inflate(flatData.posts[i]);
+      this._posts[newpost.getId()]=newpost;
+
+    } else if (flatData.posts[i].data.k==this._latestId) {
+
+      this._latestId = -1;
+      this._lastUpdate = -1;
+
     }
-    
-    this._torrent.inflate(flatData.torrent);
+
+  }
 
 }
 
@@ -31902,11 +32373,36 @@ TwisterStream.prototype._do =  function (cbfunc) {
     
 }
 
+TwisterStream.prototype.updateCache = function (cbfunc) {
+  
+  var Twister = this._scope;
+  
+  if (this._activeTorrentUser) {
+    Twister._wallet[this._activeTorrentUser]._torrents[this._name].updatePostsCache(cbfunc);
+  } else {
+    this._log("user has no active torrent")
+    cbfunc(false);
+  }
+
+}
+
+TwisterStream.prototype.fillCache = function (id,cbfunc) {
+  
+  var Twister = this._scope;
+  
+  if (this._activeTorrentUser) {
+    Twister._wallet[this._activeTorrentUser]._torrents[this._name].fillPostsCache(id,cbfunc);
+  } else {
+    cbfunc(false);
+  }
+
+}
+
 TwisterStream.prototype._queryAndDo = function (cbfunc) {
   
     var thisResource = this;
         
-    thisResource._torrent.updateCache(function(success){
+    thisResource.updateCache(function(success){
 
         if (success) {
             
@@ -31972,7 +32468,6 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
         thisResource._posts[newpost.getId()] = newpost;
       
-        
         if ( thisResource._latestId<newpost.getId() ) {
         
             thisResource._latestId=newpost.getId();
@@ -32034,7 +32529,7 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
 
       var thisResource = this;
 
-      thisResource._torrent.fillCache(id,function(success){
+      thisResource.fillCache(id,function(success){
 
         if (success) {
 
@@ -32083,472 +32578,7 @@ TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 module.exports = TwisterStream;
 
 
-},{"./TwisterPost.js":146,"./TwisterResource.js":151,"./TwisterTorrent.js":154,"inherits":52}],154:[function(require,module,exports){
-'use strict';
-
-var inherits = require('inherits');
-var TwisterResource = require('./TwisterResource.js');
-
-/**
- * Describes the torrent of the {@link TwisterPosts} of a {@link TwisterUser} when available on the host. The torrent significantly speeds up post querying time. It is implemented as a look-ahead that is queryied when accessing a post that is not already in cache.
- * @class
- */
-function TwisterTorrent(name,scope) {
-    
-  TwisterResource.call(this,name,scope);
-
-  this._active = false;
-  this._type = "torrent";
-  this._followingName = null;
-
-}
-
-inherits(TwisterTorrent,TwisterResource);
-
-module.exports = TwisterTorrent;
-
-TwisterTorrent.prototype.flatten = function () {
-
-  var flatData = TwisterResource.prototype.flatten.call(this);
-
-  flatData.active = this._active;
-  flatData.followingName = this._followingName;
-
-  return flatData;
-    
-}
-
-TwisterTorrent.prototype.inflate = function (flatData) {
-
-  TwisterResource.prototype.inflate.call(this,flatData);
-
-  this._active = flatData.active;
-  this._followingName = flatData.followingName;
-
-}
-
-TwisterTorrent.prototype.activate =  function (followingName,cbfunc) {
-
-  var Twister = this._scope;
-
-  var thisTorrent = this;
-
-  if (this._followingName && this._followingName!=followingName) {
-
-    this.deactivate(function(){
-
-      thisTorrent.activate(followingName,cbfunc);
-
-    });
-
-  } else {
-
-    this._followingName=followingName;
-
-    if (!thisTorrent._active) {
-
-      thisTorrent.RPC("follow", [ followingName, [thisTorrent._name] ], function(res) {
-
-        thisTorrent._active = true ;
-
-        if (cbfunc) {
-          cbfunc(res);        
-        }
-
-      }, function(ret) {
-
-        thisTorrent._handleError(ret);
-
-      });
-
-    } else {
-
-      if (cbfunc) {
-        cbfunc();        
-      }
-
-    }
-
-  }
-
-}
-
-TwisterTorrent.prototype.deactivate =  function (cbfunc) {
-
-  this._active = false;
-  this._followingName = null;
-
-}
-
-TwisterTorrent.prototype.getQuerySetting = function (setting) {
-
-  //console.log(this._name);
-
-  var Twister = this._scope;
-
-  if (setting in this._activeQuerySettings) {
-    return this._activeQuerySettings[setting];
-  }
-
-  if (setting in this._querySettings) {
-    return this._querySettings[setting];
-  }
-
-  if (setting in Twister.getAccount(this._followingName)._querySettings) {
-    return Twister.getAccount(this._followingName)._querySettings[setting];
-  }
-
-  if (setting in Twister.getUser(this._name)._stream._activeQuerySettings) {
-    return Twister.getUser(this._name)._stream._activeQuerySettings[setting];
-  }
-
-  if (setting in Twister.getUser(this._name)._stream._querySettings) {
-    return Twister.getUser(this._name)._stream._querySettings[setting];
-  }
-
-  return TwisterResource.prototype.getQuerySetting.call(this,setting);
-
-}
-
-TwisterTorrent.prototype._queryAndDo = function (cbfunc) {
-
-  var Twister = this._scope;
-
-  var thisTorrent = this;
-  
-  
-  if (thisTorrent._active) {
-    
-    thisTorrent._log("locking torrents with same following name")
-    
-    for (var username in Twister._userCache){
-
-      if (Twister._userCache[username]._stream._torrent._followingName == thisTorrent._followingName) {              
-          Twister._userCache[username]._stream._updateInProgress = true;
-      }
-    }
-
-    thisTorrent.RPC("getlasthave", [ this._followingName ], function(res) {
-
-      if (thisTorrent._name in res) { 
-
-        thisTorrent._active = true ;
-        
-        var resTorrent = Twister.getUser(username)._stream._torrent;
-
-        thisTorrent._log("updating other torrents based on getlasthave result")
-        
-        for (var username in res) {
-
-          var resTorrent = Twister.getUser(username)._stream._torrent;
-
-          if (resTorrent._active) {
-
-            resTorrent._latestId = res[username];       
-            resTorrent._lastUpdate = Date.now()/1000;  
-            resTorrent._updateInProgress = false;
-
-          }
-          
-        }
-        
-
-      } else {
-
-        thisTorrent._active = false ;
-        thisTorrent._followingName = null ;
-        thisTorrent._handleError({mesage:"Torrent not active on server"});
-
-      }
-      
-      thisTorrent._log("unlocking torrents with same following name")
-      
-      for (var username in Twister._userCache){
-
-        if (Twister._userCache[username]._stream._torrent._followingName == thisTorrent._followingName) {              
-            Twister._userCache[username]._stream._updateInProgress = false;
-        }
-      }
-
-      if (cbfunc) {
-
-        thisTorrent._do(cbfunc);
-
-      }
-
-    }, function(ret) {
-
-      thisTorrent._handleError(ret);
-
-    });
-    
-  } else {
-     
-    thisTorrent._handleError({message: "Activate torrent first"});
-    
-  }
-
-}
-
-TwisterTorrent.prototype._fillCacheUsingGetposts = function (count,requests,cbfunc) {
-
-  var Twister = this._scope;
-
-  var thisTorrent = this;
-  var thisStream = Twister.getUser(this._name)._stream;
-
-  if (thisTorrent._active) {
-
-    thisStream._log("querying getposts for "+requests.length+" users")
-
-    for (var i in requests){
-      Twister.getUser(requests[i].username)._stream._updateInProgress = true;    
-    }
-
-    thisTorrent.RPC("getposts", [ count , requests ], function(res) {
-
-      var minIds = {};
-
-      if (res.length>0) {
-
-        for (var i in res) {
-
-          var resUsername = res[i].userpost.n;
-          var resId = res[i].userpost.k;
-
-          if (resUsername in minIds) {
-            minIds[resUsername]=Math.min(resId,minIds[resUsername]);
-          } else {
-            minIds[resUsername]=resId;
-          }
-
-          var resStream = Twister.getUser(res[i].userpost.n)._stream;
-
-          resStream._verifyAndCachePost(res[i],function(newpost){
-
-            if ( newpost.getId() > resStream._latestId ) {
-
-              resStream._latestId = newpost.getId();
-
-            }
-
-          });
-
-        }
-
-        if (res.length<count) {
-
-          thisStream._log("got all posts, no need to requery");
-
-          for (var i in requests){
-            if ( !requests.max_id || requests.max_id==-1 ) {
-              Twister.getUser(requests[i].username)._stream._lastUpdate = Date.now()/1000;
-              Twister.getUser(requests[i].username)._stream._updateInProgress = false;
-            }
-          }
-
-          cbfunc(true);
-
-        } else {
-
-          var newrequests = [];
-
-          for (var i in requests){
-
-            if (!(requests[i].username in minIds)) {
-              newrequests.push(requests[i]);
-            } else {
-              Twister.getUser(requests[i].username)._stream._lastUpdate = Date.now()/1000;
-              Twister.getUser(requests[i].username)._stream._updateInProgress = false;
-            }
-
-
-            if ( !requests.max_id || requests.max_id==-1 ) {
-              Twister.getUser(requests[i].username)._stream._lastUpdate = Date.now()/1000;
-              Twister.getUser(requests[i].username)._stream._updateInProgress = false;
-            }
-
-
-          }
-
-          if (newrequests.length) {
-
-            thisStream._log("incomplete result. requerying");
-
-            setTimeout(function(){
-              thisTorrent._fillCacheUsingGetposts(count,newrequests,cbfunc);
-            },200);
-
-          } else {
-
-            thisStream._log("count full but ok");
-
-            cbfunc(true);
-
-          }
-
-        }
-
-      } else {
-
-        thisStream._log("getposts gave an empty result")
-
-      }
-
-    }, function(ret) {
-
-        thisStream._handleError(ret);
-
-    });
-
-  } else {
-
-    cbfunc(false);
-
-  }
-    
-}
-
-TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
-
-  var Twister = this._scope;
-
-  var thisTorrent = this;
-  var thisStream = Twister.getUser(this._name)._stream;
-    
-  
-  if (thisTorrent._active) {
-
-
-    for (var username in Twister._userCache){
-
-        if (Twister._userCache[username]._stream._torrent._followingName == thisTorrent._followingName) {              
-            Twister._userCache[username]._stream._updateInProgress = true;
-        }
-    }
-
-
-    thisTorrent.RPC("getlasthave", [ thisTorrent._followingName ], function(res) {
-
-        if (res) {
-
-          var thisUserIsUpToDate = false;
-
-          var outdatedUsers =[];
-
-          for (var username in res) {
-
-            var resTorrent = Twister.getUser(username)._stream._torrent;
-
-            if (resTorrent._active) {
-
-              resTorrent._latestId = res[username];       
-              resTorrent._lastUpdate = Date.now()/1000;  
-              resTorrent._updateInProgress = false;
-
-            }
-
-
-            if (username==thisTorrent._name && res[username]==thisStream._latestId) {
-
-              thisUserIsUpToDate = true;
-
-            }
-
-            if (res[username]==Twister.getUser(username)._stream._latestId) {
-
-              Twister.getUser(username)._stream._lastUpdate=Date.now()/1000;
-              Twister.getUser(username)._stream._updateInProgress=false;
-
-            } else {
-
-              outdatedUsers.push({username:username});
-
-            }
-
-          }
-
-          thisTorrent._fillCacheUsingGetposts(30,outdatedUsers,function(){
-
-              cbfunc(true);
-
-              for (var username in Twister._cache){
-                if (Twister._cache[username]._stream._torrent._followingName == thisTorrent._followingName) {
-                  Twister._cache[username]._stream._updateInProgress = false;
-                }
-              }
-
-          });
-
-        } else {
-
-          cbfunc(false);
-
-        }
-
-        for (var username in Twister._cache){
-          if (Twister._cache[username]._stream._torrent._followingName == thisTorrent._followingName) {
-            Twister._cache[username]._stream._updateInProgress = false;
-          }
-        }
-
-    }, function(ret) {
-
-      thisStream._handleError(ret);
-
-      cbfunc(false);
-
-    });
-
-  } else {
-
-    cbfunc(false);
-
-  }
-    
-}
-
-TwisterTorrent.prototype.updateCache = function (cbfunc) {
-    
-  var Twister = this._scope;
-
-  var thisTorrent = this;
-  var thisStream = Twister.getUser(this._name)._stream;
-
-  thisStream._log("update cache "+thisStream._name)  
-
-  thisTorrent._checkForUpdatesUsingGetLastHave(function(uptodate){
-
-    if (uptodate) {
-    thisStream._log("lasthaves "+thisTorrent._name+" worked") 
-
-      cbfunc(true);
-
-    } else {
-    thisStream._log("lasthaves "+thisTorrent._name+" failed") 
-
-      thisTorrent._fillCacheUsingGetposts(30,[{username:thisTorrent._name}],cbfunc);
-
-    }
-
-  });
-    
-}
-
-TwisterTorrent.prototype.fillCache = function (id,cbfunc) {
-
-  var Twister = this._scope;
-
-  var thisTorrent = this;
-  var thisUser = Twister.getUser(this._name);
-  var thisStream = Twister.getUser(this._name)._stream;
-
-  thisStream._log("fill cache "+thisTorrent._name+" id "+id)  
-
-  thisTorrent._fillCacheUsingGetposts(30,[{username:thisTorrent._name,max_id:id}],cbfunc);
-
-}
-},{"./TwisterResource.js":151,"inherits":52}],155:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],155:[function(require,module,exports){
 'use strict';
 
 var TwisterProfile = require('./TwisterProfile.js');
@@ -32618,10 +32648,6 @@ TwisterUser.prototype.getUsername = function () {
     return this._name;
 }
 
-TwisterUser.prototype.getTorrent = function () {
-    return this._stream._torrent;
-}
-
 TwisterUser.prototype._doPubKey = function (cbfunc, querySettings) {
     this._pubkey._checkQueryAndDo(cbfunc, querySettings);
 }
@@ -32666,7 +32692,7 @@ TwisterUser.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {
     this._stream._doUntil(cbfunc, querySettings);
 
 }
-},{"./TwisterAvatar.js":142,"./TwisterFollowings.js":143,"./TwisterMentions.js":145,"./TwisterProfile.js":147,"./TwisterPubKey.js":149,"./TwisterStream.js":153}],156:[function(require,module,exports){
+},{"./TwisterAvatar.js":143,"./TwisterFollowings.js":144,"./TwisterMentions.js":146,"./TwisterProfile.js":148,"./TwisterPubKey.js":150,"./TwisterStream.js":154}],156:[function(require,module,exports){
 
 },{}],157:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
@@ -57975,5 +58001,5 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}]},{},[141])(141)
+},{}]},{},[142])(142)
 });

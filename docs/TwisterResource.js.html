@@ -68,13 +68,13 @@ TwisterResource.prototype.flatten = function () {
 TwisterResource.prototype.inflate = function (flatData) {
     
     this._lastUpdate = flatData.lastUpdate;
-	this.verified = flatData.verified;
-	this.querySettings = flatData.querySettings;
-	this.revisionNumber = flatData.revisionNumber;
+	this._verified = flatData.verified;
+	this._querySettings = flatData.querySettings;
+	this._revisionNumber = flatData.revisionNumber;
     this._name = flatData.name;
     this._data = flatData.data;
 	
-	if (!this.verified) {this._lastUpdate=-1;}
+	if (!this._verified) {this._lastUpdate=-1;}
 
 }
 
@@ -85,14 +85,15 @@ TwisterResource.prototype._do =  function (cbfunc) {
 }
 
 /**
- * Checks whether cached resource is outdated and invokes an update if needed. Call cbfunc on the resource when done.
+ * Checks whether cached resource is outdated and invokes an update if needed. Calls cbfunc on the resource when done.
  * @function
  * @param {function} cbfunc callback function
  * @param {Object} querySettings
  */
 TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
     
-    if (!querySettings) {querySettings={};}
+    if (!querySettings) {querySettings={};} 
+    //else {console.log(querySettings)}
     
     var Twister = this._scope;
 
@@ -104,13 +105,15 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         thisResource._updateInProgress = true;
 
         var outdatedTimestamp = 0;
-        
+      
         outdatedTimestamp = Date.now()/1000 - thisResource.getQuerySetting("outdatedLimit");    
 
         if ( this._lastUpdate > outdatedTimestamp ){
             
             thisResource._do(cbfunc);
             
+            thisResource._log("resource present in cache");
+          
             thisResource._activeQuerySettings = {};
             thisResource._updateInProgress = false;
 
@@ -119,6 +122,8 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
             thisResource._queryAndDo(function(newresource){
                 
                 thisResource._do(cbfunc);
+              
+                thisResource._log("resource not in cahce. querying");
                 
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
@@ -128,6 +133,8 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         }
 
     } else {
+      
+        thisResource._log("update in progress "+thisResource._type+" "+thisResource._name)
         
         setTimeout(function(){
         
@@ -158,8 +165,10 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
         return this._querySettings[setting];
     }
     
-    if (setting in Twister._querySettingsByType) {
-        return Twister._querySettingsByType[setting];
+    //console.log(this._type,Twister._querySettingsByType)
+  
+    if (setting in Twister._querySettingsByType &amp;&amp; this._type in Twister._querySettingsByType[setting]) {
+        return Twister._querySettingsByType[setting][this._type];
     }
     
     if (this._hasParentUser &amp;&amp; setting in Twister.getUser(this._name)._querySettings) {
@@ -188,9 +197,17 @@ TwisterResource.prototype._handleError = function (error) {
     
 }
 
+TwisterResource.prototype._log = function (log) {
+    
+    this.getQuerySetting("logfunc").call(this,log);
+    
+}
+
 TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc) {
     
 	var thisResource = this;
+  
+    thisResource._log("calling JSON-RPC "+method+" "+JSON.stringify(params));
 	
 	if (typeof errorFunc != "function") {
 	
@@ -218,12 +235,14 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
                     
         var request = require('request');
         request({
+          
             uri: this.getQuerySetting("host"),
             method: "POST",
             timeout: this.getQuerySetting("timeout"),
             followRedirect: true,
             maxRedirects: 10,
             body: '{"jsonrpc": "2.0", "method": "'+method+'", "params": '+JSON.stringify(params)+', "id": 0}'
+          
         }, function(error, response, body) {
             
             if (error) { 
@@ -253,7 +272,7 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
     var Twister = this._scope;
     
     var thisResource = this;
-    
+  
     if ( Twister._activeDHTQueries &lt; Twister._maxDHTQueries ) {
     
         Twister._activeDHTQueries++;
@@ -270,6 +289,8 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                 
                 if (signatureVerification!="none" 
 					&amp;&amp; (args[2]="m" || (args[0]==signingUser) ) ) {
+                  
+                    thisResource._log("issuing signature verification");
                 
                     if (signatureVerification=="background") { cbfunc(res); }
 
@@ -294,9 +315,13 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 
                     });
                     
-                } else { cbfunc(res); }
+                } else { 
+                  
+                  thisResource._log("no signature verification needed");
+                  cbfunc(res); 
+                }
                 
-            }
+            } else { thisResource._handleError({message:"dht resource is empty"}); }
             
         }, function(error) {
             
@@ -325,13 +350,13 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterAvatar.html">TwisterAvatar</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterFollowings.html">TwisterFollowings</a></li><li><a href="TwisterHashtag.html">TwisterHashtag</a></li><li><a href="TwisterMentions.html">TwisterMentions</a></li><li><a href="TwisterPost.html">TwisterPost</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Tue Apr 21 2015 09:10:15 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Mon Apr 27 2015 13:25:39 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

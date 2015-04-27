@@ -53,12 +53,20 @@ TwisterProfile.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+/** @function
+ * @name getAllFields 
+ * @description returns the complete profile as Object
+ */
 TwisterProfile.prototype.getAllFields = function () {
 
     return this._data;
     
 }
 
+/** @function
+ * @name getField 
+ * @description returns a single field of the profile
+ */
 TwisterProfile.prototype.getField = function (fieldname) {
 
     return this._data[fieldname];
