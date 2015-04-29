@@ -86,6 +86,8 @@ TwisterPubKey.prototype.getKey = function () {
 
 TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, cbfunc) {
 
+    var thisResource = this;
+  
     var signature = JSON.parse(JSON.stringify(signature_ori));
 
     var message = JSON.parse(JSON.stringify(message_ori));
@@ -132,7 +134,7 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
             var retVal = false;	
 
-            thisPubKey._handleError({message:message});
+            thisResource._handleError({message:message});
 
         }
 

@@ -29837,6 +29837,41 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 
 }
 
+TwisterAccount.prototype.post = function (msg,cbfunc) {
+  
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
+
+    var newid = thisTorrent._latestId+1;
+    //thisTorrent._latestId = newid;
+
+    thisAccount.RPC("newpostmsg",[
+        thisAccount._name,
+        newid,
+        msg
+    ],function(result){
+      
+      var TwisterPost = require("../TwisterPost.js");      
+      var data = {};
+      data.n = thisAccount._name;
+      data.k = newid;
+      data.time = Math.round(Date.now()/1000);
+      data.msg = msg;
+      var newpost = new TwisterPost(data,Twister);
+      cbfunc(newpost);
+      Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+    },function(error){
+        TwisterAccount._handleError(error);
+    });
+
+  });
+
+}
+
 TwisterAccount.prototype.getTorrent = function (username) {
   
   if( username in this._torrents ) {
@@ -29877,7 +29912,7 @@ TwisterAccount.prototype.doLatestDirectMessagesUntil = function (username, cbfun
 	this.getDirectMessages(username)._doUntil(cbfunc, querySettings);
 
 }
-},{"../TwisterResource.js":152,"./TwisterDirectMessages.js":140,"./TwisterTorrent.js":141,"inherits":52}],140:[function(require,module,exports){
+},{"../TwisterPost.js":147,"../TwisterResource.js":152,"./TwisterDirectMessages.js":140,"./TwisterTorrent.js":141,"inherits":52}],140:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('../TwisterResource.js');
@@ -30589,8 +30624,8 @@ Twister._promotedPosts = new TwisterPromotedPosts(Twister);
  * @param {string} options.host endpoint for JSON-RPC queries used by default
  * @param {int} options.timeout timeout for JSON-RPC in milliseconds
  * @param {function} options.errorfunc called when JSON-RPC error occurs
- * @param {bool} options.verifySignatures
- * @param {bool} options.querySettingsByType
+ * @param {bool} options.verifySignatures possible options are "none","instant" and "background". Default is "background"
+ * @param {bool} options.querySettingsByType 
  * @param {bool} options.maxDHTQueries
  */
 Twister.init = function (options) {
@@ -30781,7 +30816,7 @@ Twister.serializeCache = function () {
 
 /** @function
  * @name serializeCache 
- * @description Reloads the cache from a flattened cached object
+ * @description Reloads the cache from a flattened cache object
  */
 Twister.deserializeCache = function (flatData) {
 
@@ -30839,7 +30874,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes the avatar of a {@link TwisterUser}.
- * @class
+ * @module 
  */
 TwisterAvatar = function (name,scope) {
     
@@ -30887,6 +30922,10 @@ TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+/** @function
+ * @name getUrl 
+ * @description return the (data-)url of the avatar
+ */
 TwisterAvatar.prototype.getUrl = function () {
 
     return this._data;
@@ -30899,7 +30938,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes the followings of a {@link TwisterUser}
- * @class
+ * @module
  */
 TwisterFollowings = function (name,scope) {
     
@@ -30958,12 +30997,22 @@ TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+
+/** @function
+ * @name getNames 
+ * @description returns the usernames of the following users
+ */
 TwisterFollowings.prototype.getNames = function () {
 
     return this._data;
     
 }
 
+/** @function
+ * @name doUsers 
+ * @description calls cbfunc with every {@link TwisterUser} object of the following users.
+ * @param {function} cbfunc callback function
+ */
 TwisterFollowings.prototype.doUsers = function(cbfunc) {
 
     var Twister = this._scope;
@@ -30991,7 +31040,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes a hashtag resource.
- * @class
+ * @module
  */
 TwisterHashtag = function (name,scope) {
     
@@ -31049,6 +31098,12 @@ TwisterHashtag.prototype._queryAndDo = function (cbfunc, querySettings) {
         
 }
 
+
+/** @function
+ * @name doPosts 
+ * @description calls cbfunc with every {@link TwisterPost} object of the hashtag.
+ * @param {function} cbfunc callback function
+ */
 TwisterHashtag.prototype.doPosts = function (cbfunc) {
 
 	var posts = [];
@@ -31075,7 +31130,7 @@ var TwisterResource = require('./TwisterResource.js');
 
 /**
  * Describes the mentions of a {@link TwisterUser}.
- * @class
+ * @module
  */
 TwisterMentions = function (name,scope) {
     
@@ -31134,6 +31189,11 @@ TwisterMentions.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+/** @function
+ * @name doPosts 
+ * @description calls cbfunc with every {@link TwisterPost} object of the mentions.
+ * @param {function} cbfunc callback function
+ */
 TwisterMentions.prototype.doPosts = function (cbfunc) {
 
 	var posts = [];
@@ -31163,7 +31223,7 @@ var TwisterRetwists = require('./TwisterRetwists.js');
 
 /**
  * Describes a single post of a {@link TwisterUser}.
- * @class
+ * @module
  */
 function TwisterPost(data,scope) {
     
@@ -31216,10 +31276,18 @@ TwisterPost.prototype._queryAndDo = function (cbfunc) {
     cbfunc(this);
 }
 
+/** @function
+ * @name getId 
+ * @description returns the post id.
+ */
 TwisterPost.prototype.getId = function () {
     return this._data.k;
 }
 
+/** @function
+ * @name getId 
+ * @description returns the post id of the last post.
+ */
 TwisterPost.prototype.getLastId = function () {
 	if (!this._isPromotedPost) {
 		return this._data.lastk;
@@ -31228,76 +31296,163 @@ TwisterPost.prototype.getLastId = function () {
 	}
 }
 
+
+/** @function
+ * @name doPreviousPost 
+ * @description calls cbfunc with the previous post as argument. Queries the post if not in cache.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
 TwisterPost.prototype.doPreviousPost = function (cbfunc,querySettings) {
 	
 	if (!this._isPromotedPost) {
 		this._scope.getUser(this.getUsername()).doPost(this.getLastId(),cbfunc,querySettings);
 	} else {
+      //console.log(this)
 		this._scope.getPromotedPosts()._doPost(this.getLastId(),cbfunc,querySettings);
 	}
 	
 }
 
+/** @function
+ * @name getTimestamp 
+ * @description returns the timestamp of the post.
+ */
 TwisterPost.prototype.getTimestamp = function () {
     return this._data.time;
 }
 
+
+/** @function
+ * @name getContent 
+ * @description returns the content of the post.
+ */
 TwisterPost.prototype.getContent = function () {
     return this._data.msg;
 }
 
+
+/** @function
+ * @name getUsername 
+ * @description returns the user that posted the post.
+ */
 TwisterPost.prototype.getUsername = function () {
     return this._data.n;
 }
 
+
+/** @function
+ * @name isReply 
+ * @description returns true if the postis an reply.
+ */
 TwisterPost.prototype.isReply = function () {
     return ("reply" in this._data);
 }
 
+
+/** @function
+ * @name getReplyUser 
+ * @description returns the username of the user to which this post is a reply.
+ */
 TwisterPost.prototype.getReplyUser = function () {
     return this._data.reply.n;
 }
 
+
+/** @function
+ * @name getReplyId 
+ * @description returns the id of the post that this post is replying to.
+ */
 TwisterPost.prototype.getReplyId = function () {
     return this._data.reply.k;
 }
 
-TwisterPost.prototype.doReplies = function (cbfunc) {
-    this._replies._checkQueryAndDo(cbfunc);  
+
+/** @function
+ * @name doReplies 
+ * @description calls cbfunc for every post that is a reply to this post.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doReplies = function (cbfunc,querySettings) {
+    this._replies._checkQueryAndDo(cbfunc,querySettings);  
 }
 
-TwisterPost.prototype.doPostRepliedTo = function (cbfunc) {
-    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc);
+/** @function
+ * @name doPostRepliedTo 
+ * @description calls cbfunc with the post that this post is replying to.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doPostRepliedTo = function (cbfunc,querySettings) {
+    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc,querySettings);
 }
 
+/** @function
+ * @name isRetwist 
+ * @description returns true if the postis an rewtist.
+ */
 TwisterPost.prototype.isRetwist = function () {
     return ("rt" in this._data);
 }
 
+
+/** @function
+ * @name getRetwistedId 
+ * @description returns the id of the retwisted post.
+ */
 TwisterPost.prototype.getRetwistedId = function () {
     return this._data.rt.k;
 }
 
+/** @function
+ * @name getRetwistedlastId 
+ * @description returns the last id of the rewisted post.
+ */
 TwisterPost.prototype.getRetwistedlastId = function () {
     return this._data.rt.lastk;
 }
 
+/** @function
+ * @name getRetwistedTimestamp 
+ * @description returns the timestamp of the retwisted post
+ */
 TwisterPost.prototype.getRetwistedTimestamp = function () {
     return this._data.rt.time;
 }
 
+/** @function
+ * @name getRetwistedContent 
+ * @description returns content of the rwteisted post
+ */
 TwisterPost.prototype.getRetwistedContent = function () {
     return this._data.rt.msg;
 }
 
+/** @function
+ * @name getRetwistedUser 
+ * @description returns the username of the retwisted post.
+ */
 TwisterPost.prototype.getRetwistedUser = function () {
     return this._data.rt.n;
 }
 
-TwisterPost.prototype.doRetwistingPosts = function (cbfunc) {
-    this._retwists._checkQueryAndDo(cbfunc);
+/** @function
+ * @name doRetwistingPosts 
+ * @description calls cbfunc with an array of the post that are retwisting this post.
+ * @param cbfunc {function} 
+ * @param querySettings {Object} 
+ */
+TwisterPost.prototype.doRetwistingPosts = function (cbfunc,querySettings) {
+    this._retwists._checkQueryAndDo(cbfunc,querySettings);
 }
 
+
+/** @function
+ * @name doRetwistedPost 
+ * @description calls cbfunc the retwisted post.
+ * @param cbfunc {function} 
+ */
 TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
     
     var Twister = this._scope;
@@ -31377,15 +31532,25 @@ TwisterProfile.prototype._queryAndDo = function (cbfunc) {
         
 }
 
+/** @function
+ * @name getAllFields 
+ * @description returns the complete profile as Object
+ */
 TwisterProfile.prototype.getAllFields = function () {
 
     return this._data;
     
 }
 
+/** @function
+ * @name getField 
+ * @description returns a single field of the profile
+ */
 TwisterProfile.prototype.getField = function (fieldname) {
-
+  
+  if (this._data) {
     return this._data[fieldname];
+  } else { return null }
     
 }
 },{"./TwisterResource.js":152,"inherits":52}],149:[function(require,module,exports){
@@ -31503,9 +31668,11 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
     
     if( !( newid in thisResource._posts) ) {
 
+		var signatureVerification = thisResource.getQuerySetting("signatureVerification");
+
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
+        var newpost = new TwisterPost(payload.userpost,thisResource._scope);
 
 		newpost._isPromotedPost = true;
 		
@@ -31523,7 +31690,7 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
 
         } else {
         
-			if (signatureVerification=="background") { cbfunc(newpost); }
+			if (cbfunc && signatureVerification=="background") { cbfunc(newpost); }
 			
 			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
 
@@ -31597,17 +31764,17 @@ TwisterPromotedPosts.prototype._doPost = function (id,cbfunc) {
 
 TwisterPromotedPosts.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {
 
-	Twister._promotedPosts._checkQueryAndDo(function doUntil(post){
-	
-		var retVal = cbfunc(post);
-		
-		if( post.getId()!=1 && retVal!==false ) { 
-			
-			post.doPreviousPost(doUntil, querySettings); 
-			
-		}
-	
-	}, querySettings);
+  Twister._promotedPosts._checkQueryAndDo(function doUntil(post){
+
+    var retVal = cbfunc(post);
+
+    if( post.getId()!=1 && retVal!==false ) { 
+
+      post.doPreviousPost(doUntil, querySettings); 
+
+    }
+
+  }, querySettings);
 	
 }
 
@@ -31672,19 +31839,21 @@ TwisterPubKey.prototype._queryAndDo = function (cbfunc) {
             
     thisResource.RPC("dumppubkey", [ thisResource._name ], function(res) {
 
-        //var TwisterCrypto = require('./TwisterCrypto.js');
-        //console.log(res);
-        thisResource._lastUpdate = Date.now()/1000;
-        
-        thisResource._data = res;
-        
-        thisResource._btcKey = Bitcoin.ECPubKey.fromHex(res);
+        if(res.length) {
+      
+          thisResource._lastUpdate = Date.now()/1000;
 
-        if (cbfunc) {
+          thisResource._data = res;
 
-            cbfunc(thisResource);
+          thisResource._btcKey = Bitcoin.ECPubKey.fromHex(res);
 
-        }
+          if (cbfunc) {
+
+              cbfunc(thisResource);
+
+          }
+          
+        } else { thisResource._handleError({message:"pubkey not available on server"}) }
 		
     }, function(ret) {
 
@@ -31702,6 +31871,8 @@ TwisterPubKey.prototype.getKey = function () {
 
 TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, cbfunc) {
 
+    var thisResource = this;
+  
     var signature = JSON.parse(JSON.stringify(signature_ori));
 
     var message = JSON.parse(JSON.stringify(message_ori));
@@ -31748,7 +31919,7 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
             var retVal = false;	
 
-            console.log(message);
+            thisResource._handleError({message:message});
 
         }
 
@@ -31930,6 +32101,10 @@ TwisterResource.prototype._do =  function (cbfunc) {
 
 }
 
+TwisterResource.prototype.inCache = function () {
+    return (this._lastUpdate>0);
+}
+
 /**
  * Checks whether cached resource is outdated and invokes an update if needed. Calls cbfunc on the resource when done.
  * @function
@@ -31938,7 +32113,7 @@ TwisterResource.prototype._do =  function (cbfunc) {
  */
 TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
     
-    if (!querySettings) {querySettings={};} 
+    if (querySettings===undefined) {querySettings={};} 
     //else {console.log(querySettings)}
     
     var Twister = this._scope;
@@ -32167,7 +32342,10 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                   cbfunc(res); 
                 }
                 
-            } else { thisResource._handleError({message:"dht resource is empty"}); }
+            } else { 
+              cbfunc(res);
+              thisResource._handleError({message:"dht resource is empty"}); 
+            }
             
         }, function(error) {
             
@@ -32417,7 +32595,7 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
 
             thisResource.dhtget([thisResource._name, "status", "s"], function (result) {
 
-                    console.log(result);
+                    //console.log(result[0].p.v);
               
                     if (result[0]) {
 
@@ -32656,22 +32834,34 @@ TwisterUser.prototype.doProfile = function (cbfunc, querySettings) {
     this._profile._checkQueryAndDo(cbfunc, querySettings);
 };
 
+TwisterUser.prototype.getProfile = function () {
+    return this._profile;
+};
+
 TwisterUser.prototype.doAvatar = function (cbfunc, querySettings) {
     this._avatar._checkQueryAndDo(cbfunc, querySettings);
+};
+
+TwisterUser.prototype.getAvatar = function () {
+    return this._avatar;
 };
 
 TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
     this._followings._checkQueryAndDo(cbfunc, querySettings);
 };
 
+TwisterUser.prototype.getFollowings = function () {
+    return this._followings;
+};
+
 TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
-  console.log("doing status")
     this._stream._checkQueryAndDo(cbfunc, querySettings);
 };
 
 TwisterUser.prototype.doPost = function (id, cbfunc) {
     this._stream._doPost(id, cbfunc);
 }
+
 
 TwisterUser.prototype.getPost = function (id) {
     if (id in this._stream._posts) {
@@ -32685,6 +32875,10 @@ TwisterUser.prototype.doMentions = function (cbfunc, querySettings) {
 
     this._mentions._checkQueryAndDo(cbfunc);
 
+}
+
+TwisterUser.prototype.getMentions = function () {
+    return this._mentions;
 }
 
 TwisterUser.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {

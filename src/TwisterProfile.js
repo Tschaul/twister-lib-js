@@ -68,7 +68,9 @@ TwisterProfile.prototype.getAllFields = function () {
  * @description returns a single field of the profile
  */
 TwisterProfile.prototype.getField = function (fieldname) {
-
+  
+  if (this._data) {
     return this._data[fieldname];
+  } else { return null }
     
 }

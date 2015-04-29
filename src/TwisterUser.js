@@ -75,12 +75,24 @@ TwisterUser.prototype.doProfile = function (cbfunc, querySettings) {
     this._profile._checkQueryAndDo(cbfunc, querySettings);
 };
 
+TwisterUser.prototype.getProfile = function () {
+    return this._profile;
+};
+
 TwisterUser.prototype.doAvatar = function (cbfunc, querySettings) {
     this._avatar._checkQueryAndDo(cbfunc, querySettings);
 };
 
+TwisterUser.prototype.getAvatar = function () {
+    return this._avatar;
+};
+
 TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
     this._followings._checkQueryAndDo(cbfunc, querySettings);
+};
+
+TwisterUser.prototype.getFollowings = function () {
+    return this._followings;
 };
 
 TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
@@ -90,6 +102,7 @@ TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
 TwisterUser.prototype.doPost = function (id, cbfunc) {
     this._stream._doPost(id, cbfunc);
 }
+
 
 TwisterUser.prototype.getPost = function (id) {
     if (id in this._stream._posts) {
@@ -103,6 +116,10 @@ TwisterUser.prototype.doMentions = function (cbfunc, querySettings) {
 
     this._mentions._checkQueryAndDo(cbfunc);
 
+}
+
+TwisterUser.prototype.getMentions = function () {
+    return this._mentions;
 }
 
 TwisterUser.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {

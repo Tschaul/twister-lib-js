@@ -166,6 +166,41 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 
 }
 
+TwisterAccount.prototype.post = function (msg,cbfunc) {
+  
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
+
+    var newid = thisTorrent._latestId+1;
+    //thisTorrent._latestId = newid;
+
+    thisAccount.RPC("newpostmsg",[
+        thisAccount._name,
+        newid,
+        msg
+    ],function(result){
+      
+      var TwisterPost = require("../TwisterPost.js");      
+      var data = {};
+      data.n = thisAccount._name;
+      data.k = newid;
+      data.time = Math.round(Date.now()/1000);
+      data.msg = msg;
+      var newpost = new TwisterPost(data,Twister);
+      cbfunc(newpost);
+      Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+    },function(error){
+        TwisterAccount._handleError(error);
+    });
+
+  });
+
+}
+
 TwisterAccount.prototype.getTorrent = function (username) {
   
   if( username in this._torrents ) {
