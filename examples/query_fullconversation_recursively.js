@@ -1,9 +1,6 @@
 
 Twister = require("../src/Twister.js");
 
-Twister.init({
-    host: 'http://user:pwd@127.0.0.1:28332',
-});
 
 var goUpConversation = function (post) {
         
@@ -12,21 +9,21 @@ var goUpConversation = function (post) {
         post.doPostRepliedTo(goUpConversation);
 
     } else {
+      
+      console.log(post.getContent())
 
-        doRepliesRecursive(post);
+      post.doReplies(doRepliesRecursive);
 
     }
 }
 
-var doRepliesRecursive = function (post) {
-        
-    console.log(post.getTimestamp()+": "+post.getContent());  
-    post.doReplies(function(replies){
-    
-        replies.doPosts(doRepliesRecursive);
-    
-    });
+var doRepliesRecursive = function (replies) {
+          
+  for (var i in replies) {
+    replies[i].doReplies(doRepliesRecursive);
+    console.log(replies[i].getContent())
+  }
 
 };
 
-Twister.getUser("kseistrup").doPost(3497,goUpConversation);
+Twister.getUser("black_puppydog").doPost(729,goUpConversation);

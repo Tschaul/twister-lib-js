@@ -2,12 +2,6 @@
 
 Twister = require("../src/Twister.js")
 
-Twister.init({
-    host: 'http://user:pwd@127.0.0.1:28332',
-	verifySignatures: false
-});
-
-
 Twister.loadServerAccounts(function(){
 
 	//console.log(Twister._wallet)

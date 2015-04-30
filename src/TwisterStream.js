@@ -58,7 +58,7 @@ TwisterStream.prototype.inflate = function (flatData) {
 
     if (flatData.posts[i].verified) {
 
-      var newpost = new TwisterPost(flatData.posts[i].data,Twister);
+      var newpost = new TwisterPost(flatData.posts[i].data,flatData.posts[i].signature,Twister);
       newpost.inflate(flatData.posts[i]);
       this._posts[newpost.getId()]=newpost;
 
@@ -123,7 +123,7 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
 
             thisResource.dhtget([thisResource._name, "status", "s"], function (result) {
 
-                    //console.log(result[0].p.v);
+                    thisResource._log("result from dhtget: "+JSON.stringify(result));
               
                     if (result[0]) {
 
@@ -164,13 +164,13 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
     //console.log(payloadUser+":post"+newid);
     
-    if( payloadUser==thisResource._name && !( newid in thisResource._posts) ) {
+    if( !( newid in thisResource._posts) ) {
 
 		var signatureVerification = thisResource.getQuerySetting("signatureVerification");
 		
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,Twister);
+        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,Twister);
 
         thisResource._posts[newpost.getId()] = newpost;
       
@@ -182,11 +182,24 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
         
         if (cbfunc && signatureVerification=="none") {
             
+            thisResource._log("no signature verifcation needed");
+          
+            newpost._verified = true;
+          
             cbfunc(newpost);
+          
 
         } else {
         
-			if (cbfunc && signatureVerification=="background") { cbfunc(newpost); }
+			if (cbfunc && signatureVerification=="background") { 
+              
+              thisResource._log("issuing signature verification in background");
+              
+              var errorfunc = thisResource.getQuerySetting("errorfunc");
+              
+              cbfunc(newpost); 
+            
+            }
 			
 			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
 
@@ -201,7 +214,7 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
 					} else {
 
-						thisResource._handleError({message:"signature of post could not be verified"});
+                        errorfunc.call(thisResource,{message:"signature of post could not be verified"});
 
 					}
 
@@ -211,16 +224,22 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 				
 		}
  
-    } else {
-    
+    } else if(cbfunc) {
+      cbfunc(thisResource._posts[newid]);
     }
 
 }
 
-TwisterStream.prototype._doPost = function (id,cbfunc) {
+TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
 
+  if (querySettings===undefined) {querySettings={};} 
+  
+  //console.log(querySettings)
+  
   var Twister = this._scope;
 
+  var thisResource = this;
+  
   if (id && id>0) {
 
     if (id in this._posts){
@@ -230,6 +249,9 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
       this._log("post already in cache");
 
     } else {
+        
+      thisResource._activeQuerySettings = querySettings;
+      thisResource._updateInProgress = true;
 
       this._log("post "+id+" not in cache");
 
@@ -240,6 +262,9 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
         if (success) {
 
           thisResource._log("fill cache was successfull")
+          
+          thisResource._activeQuerySettings = {};
+          thisResource._updateInProgress = false;
 
           cbfunc(thisResource._posts[id])
 
@@ -248,8 +273,15 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
           thisResource.dhtget([thisResource._name, "post"+id, "s"],
 
             function (result) {
+          
+              thisResource._activeQuerySettings = {};
+              thisResource._updateInProgress = false;
 
-              thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
+              if (result[0]) {
+            
+                thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
+                
+              }
 
             }
 

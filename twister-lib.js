@@ -29839,7 +29839,6 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 
 TwisterAccount.prototype.post = function (msg,cbfunc) {
   
-  
   var thisAccount = this;
     
   var Twister = this._scope;
@@ -29861,11 +29860,87 @@ TwisterAccount.prototype.post = function (msg,cbfunc) {
       data.k = newid;
       data.time = Math.round(Date.now()/1000);
       data.msg = msg;
-      var newpost = new TwisterPost(data,Twister);
+      var newpost = new TwisterPost(data,"",Twister);
       cbfunc(newpost);
       Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
     },function(error){
         TwisterAccount._handleError(error);
+    });
+
+  });
+
+}
+
+TwisterAccount.prototype.reply = function (replyusername,replyid,msg,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
+
+    var newid = thisTorrent._latestId+1;
+    //thisTorrent._latestId = newid;
+
+    thisAccount.RPC("newpostmsg",[
+        thisAccount._name,
+        newid,
+        msg,
+        replyusername,
+        replyid
+    ],function(result){
+      
+      var TwisterPost = require("../TwisterPost.js");      
+      var data = {};
+      data.n = thisAccount._name;
+      data.k = newid;
+      data.time = Math.round(Date.now()/1000);
+      data.msg = msg;
+      data.reply = { k: replyid, n: replyusername };
+      var newpost = new TwisterPost(data,"",Twister);
+      cbfunc(newpost);
+      Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+    },function(error){
+        TwisterAccount._handleError(error);
+    });
+
+  });
+
+}
+
+TwisterAccount.prototype.retwist = function (rtusername,rtid,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
+
+    var newid = thisTorrent._latestId+1;
+    //thisTorrent._latestId = newid;
+    
+    Twister.getUser(rtusername).doPost(rtid,function(post){
+
+      thisAccount.RPC("newrtmsg",[
+          thisAccount._name,
+          newid,
+          {  sig_userpost: post._signature, userpost: post._data }
+      ],function(result){
+
+        var TwisterPost = require("../TwisterPost.js");      
+        var data = {};
+        data.n = thisAccount._name;
+        data.k = newid;
+        data.time = Math.round(Date.now()/1000);
+        data.rt = post._data;
+        var newpost = new TwisterPost(data,"",Twister);
+        cbfunc(newpost);
+        Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+        
+      },function(error){
+          TwisterAccount._handleError(error);
+      });
+      
     });
 
   });
@@ -30595,19 +30670,9 @@ Twister._signatureVerificationsInProgress = 0;
 
 //default query settings:
 Twister._outdatedLimit = 90;
-Twister._querySettingsByType = {
-    
-    outdatedLimit: {
-        pubkey: 60*60,
-        profile: 60*60,
-        avatar: 60*60,
-        torrent: 60*60,
-        followings: 60*60
-    }
-    
-};
+Twister._querySettingsByType = {};
 Twister._logfunc = function(){};
-Twister._host = "";
+Twister._host = "http://user:pwd@127.0.0.1:28332";
 Twister._timeout = 20000;
 Twister._errorfunc = function(error){console.log("Twister error: "+error.message);};
 
@@ -30628,7 +30693,7 @@ Twister._promotedPosts = new TwisterPromotedPosts(Twister);
  * @param {bool} options.querySettingsByType 
  * @param {bool} options.maxDHTQueries
  */
-Twister.init = function (options) {
+Twister.setup = function (options) {
 
 	for (var key in options) {
 		
@@ -30822,7 +30887,7 @@ Twister.deserializeCache = function (flatData) {
 
     if (flatData) {
 
-        Twister.init(flatData.options);
+        Twister.setup(flatData.options);
         
         if (Twister._walletType=="server") {
             var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
@@ -31225,7 +31290,7 @@ var TwisterRetwists = require('./TwisterRetwists.js');
  * Describes a single post of a {@link TwisterUser}.
  * @module
  */
-function TwisterPost(data,scope) {
+function TwisterPost(data,signature,scope) {
     
     var name = data.n;
     var id = data.k;
@@ -31234,6 +31299,7 @@ function TwisterPost(data,scope) {
     
     this._type = "post";
     this._data = data;
+    this._signature = signature;
 	this._isPromotedPost = false;
     this._replies = new TwisterReplies(name,id,scope);
     this._retwists = new TwisterRetwists(name,id,scope);
@@ -31250,6 +31316,9 @@ TwisterPost.prototype.flatten = function () {
     
     flatData.retwists = this._retwists.flatten();
     flatData.replies = this._replies.flatten();
+  
+    flatData.isPromotedPost = this._isPromotedPost;
+    flatData.signature = this._signature;
         
     return flatData;
 
@@ -31262,6 +31331,9 @@ TwisterPost.prototype.inflate = function (flatData) {
     this._replies.inflate(flatData.replies);
     this._retwists.inflate(flatData.retwists);
 
+    this._signature = flatData.signature;
+    this._isPromotedPost = flatData.isPromotedPost;
+  
 }
 
 TwisterPost.prototype._do = function (cbfunc) {
@@ -31340,6 +31412,14 @@ TwisterPost.prototype.getUsername = function () {
     return this._data.n;
 }
 
+/** @function
+ * @name getUsername 
+ * @description returns the {@link TwisterUser} object of the user that posted the post.
+ */
+TwisterPost.prototype.getUser = function () {
+    return Twister.getUser(this._data.n);
+}
+
 
 /** @function
  * @name isReply 
@@ -31354,7 +31434,7 @@ TwisterPost.prototype.isReply = function () {
  * @name getReplyUser 
  * @description returns the username of the user to which this post is a reply.
  */
-TwisterPost.prototype.getReplyUser = function () {
+TwisterPost.prototype.getReplyUsername = function () {
     return this._data.reply.n;
 }
 
@@ -31433,7 +31513,7 @@ TwisterPost.prototype.getRetwistedContent = function () {
  * @name getRetwistedUser 
  * @description returns the username of the retwisted post.
  */
-TwisterPost.prototype.getRetwistedUser = function () {
+TwisterPost.prototype.getRetwistedUsername = function () {
     return this._data.rt.n;
 }
 
@@ -31449,8 +31529,19 @@ TwisterPost.prototype.doRetwistingPosts = function (cbfunc,querySettings) {
 
 
 /** @function
+ * @name getRetwistedPost 
+ * @description return an uncached and unverified {@link TwisterPost} object of the retwisted post.
+ * @param cbfunc {function} 
+ */
+TwisterPost.prototype.getRetwistedPost = function (cbfunc) {
+    
+    return new TwisterPost(this._data.rt,this._data.sig_rt,this._scope);
+    
+}
+
+/** @function
  * @name doRetwistedPost 
- * @description calls cbfunc the retwisted post.
+ * @description Verifies and caches the retwisted post and calls cbfunc with it.
  * @param cbfunc {function} 
  */
 TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
@@ -31542,6 +31633,10 @@ TwisterProfile.prototype.getAllFields = function () {
     
 }
 
+TwisterProfile.prototype.getUsername = function () {
+  return this._name;
+}
+
 /** @function
  * @name getField 
  * @description returns a single field of the profile
@@ -31605,7 +31700,7 @@ TwisterPromotedPosts.prototype.inflate = function (flatData) {
     
     for(var i = 0; i < flatData.posts.length; i++){
         
-        var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
+        var newpost = new TwisterPost(flatData.posts[i].data,flatData.posts[i].signature,this._scope);
         newpost.inflate(flatData.posts[i]);
         this._posts[newpost.getId()]=newpost;
     
@@ -31672,7 +31767,7 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
 
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,thisResource._scope);
+        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
 
 		newpost._isPromotedPost = true;
 		
@@ -31685,6 +31780,8 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
         }
         
         if (cbfunc && signatureVerification=="none") {
+          
+            newpost._verified = true;
             
             cbfunc(newpost);
 
@@ -31909,19 +32006,19 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
         message = bencode.encode(message);
 
-        signature = new Buffer(signature, 'hex');
-
         try {
-
+            signature = new Buffer(signature, 'hex');
+          try {
             var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
-
-        } catch(e) {
-
+          } catch(e) {
             var retVal = false;	
-
-            thisResource._handleError({message:message});
-
+            thisResource._handleError({message:"verification went sideways"});
+          }
+        } catch(e) {
+          var retVal = false;	
+          thisResource._handleError({message:"signature is malformed"})
         }
+
 
         var compTime = Date.now()-startTime;
 
@@ -32174,7 +32271,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
  */
 TwisterResource.prototype.getQuerySetting = function (setting) {
 
-	//console.log(this._name);
+	//console.log(setting,this._activeQuerySettings);
 	
     var Twister = this._scope;
     
@@ -32204,9 +32301,13 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
 
 }
 
-TwisterResource.prototype.setQuerySetting = function (setting,value) {
+TwisterResource.prototype.setQuerySetting = function (settings) {
 
-    this._querySettings[settings] = value;
+    for (var key in settings) {
+		
+		this._querySettings[key] = settings[key];
+		
+	}
 
 }
 
@@ -32236,8 +32337,8 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
 	
 	}
     
-	this._activeQuerySettings["method"]=method;
-	this._activeQuerySettings["params"]=params;
+	//this._activeQuerySettings["method"]=method;
+	//this._activeQuerySettings["params"]=params;
 	
 	//console.log("rpc by "+this._name+" : "+method+" "+JSON.stringify(this._activeQuerySettings))
 	
@@ -32302,6 +32403,8 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
             
             Twister._activeDHTQueries--;
             
+            thisResource._log("dhtget result: "+JSON.stringify(res));
+          
             if (res[0]) {
 				
 				var signatureVerification = thisResource.getQuerySetting("signatureVerification");
@@ -32337,14 +32440,14 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                     });
                     
                 } else { 
-                  
+                  thisResource._verified = true;
                   thisResource._log("no signature verification needed");
                   cbfunc(res); 
                 }
                 
             } else { 
-              cbfunc(res);
               thisResource._handleError({message:"dht resource is empty"}); 
+              cbfunc(res);
             }
             
         }, function(error) {
@@ -32530,7 +32633,7 @@ TwisterStream.prototype.inflate = function (flatData) {
 
     if (flatData.posts[i].verified) {
 
-      var newpost = new TwisterPost(flatData.posts[i].data,Twister);
+      var newpost = new TwisterPost(flatData.posts[i].data,flatData.posts[i].signature,Twister);
       newpost.inflate(flatData.posts[i]);
       this._posts[newpost.getId()]=newpost;
 
@@ -32595,7 +32698,7 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
 
             thisResource.dhtget([thisResource._name, "status", "s"], function (result) {
 
-                    //console.log(result[0].p.v);
+                    thisResource._log("result from dhtget: "+JSON.stringify(result));
               
                     if (result[0]) {
 
@@ -32636,13 +32739,13 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
     //console.log(payloadUser+":post"+newid);
     
-    if( payloadUser==thisResource._name && !( newid in thisResource._posts) ) {
+    if( !( newid in thisResource._posts) ) {
 
 		var signatureVerification = thisResource.getQuerySetting("signatureVerification");
 		
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,Twister);
+        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,Twister);
 
         thisResource._posts[newpost.getId()] = newpost;
       
@@ -32654,11 +32757,24 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
         
         if (cbfunc && signatureVerification=="none") {
             
+            thisResource._log("no signature verifcation needed");
+          
+            newpost._verified = true;
+          
             cbfunc(newpost);
+          
 
         } else {
         
-			if (cbfunc && signatureVerification=="background") { cbfunc(newpost); }
+			if (cbfunc && signatureVerification=="background") { 
+              
+              thisResource._log("issuing signature verification in background");
+              
+              var errorfunc = thisResource.getQuerySetting("errorfunc");
+              
+              cbfunc(newpost); 
+            
+            }
 			
 			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
 
@@ -32673,7 +32789,7 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
 					} else {
 
-						thisResource._handleError({message:"signature of post could not be verified"});
+                        errorfunc.call(thisResource,{message:"signature of post could not be verified"});
 
 					}
 
@@ -32683,16 +32799,22 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 				
 		}
  
-    } else {
-    
+    } else if(cbfunc) {
+      cbfunc(thisResource._posts[newid]);
     }
 
 }
 
-TwisterStream.prototype._doPost = function (id,cbfunc) {
+TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
 
+  if (querySettings===undefined) {querySettings={};} 
+  
+  //console.log(querySettings)
+  
   var Twister = this._scope;
 
+  var thisResource = this;
+  
   if (id && id>0) {
 
     if (id in this._posts){
@@ -32702,6 +32824,9 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
       this._log("post already in cache");
 
     } else {
+        
+      thisResource._activeQuerySettings = querySettings;
+      thisResource._updateInProgress = true;
 
       this._log("post "+id+" not in cache");
 
@@ -32712,6 +32837,9 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
         if (success) {
 
           thisResource._log("fill cache was successfull")
+          
+          thisResource._activeQuerySettings = {};
+          thisResource._updateInProgress = false;
 
           cbfunc(thisResource._posts[id])
 
@@ -32720,8 +32848,15 @@ TwisterStream.prototype._doPost = function (id,cbfunc) {
           thisResource.dhtget([thisResource._name, "post"+id, "s"],
 
             function (result) {
+          
+              thisResource._activeQuerySettings = {};
+              thisResource._updateInProgress = false;
 
-              thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
+              if (result[0]) {
+            
+                thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
+                
+              }
 
             }
 
@@ -32858,8 +32993,8 @@ TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
     this._stream._checkQueryAndDo(cbfunc, querySettings);
 };
 
-TwisterUser.prototype.doPost = function (id, cbfunc) {
-    this._stream._doPost(id, cbfunc);
+TwisterUser.prototype.doPost = function (id, cbfunc, querySettings) {
+    this._stream._doPost(id, cbfunc, querySettings);
 }
 
 

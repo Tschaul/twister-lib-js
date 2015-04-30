@@ -129,7 +129,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
  */
 TwisterResource.prototype.getQuerySetting = function (setting) {
 
-	//console.log(this._name);
+	//console.log(setting,this._activeQuerySettings);
 	
     var Twister = this._scope;
     
@@ -159,9 +159,13 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
 
 }
 
-TwisterResource.prototype.setQuerySetting = function (setting,value) {
+TwisterResource.prototype.setQuerySetting = function (settings) {
 
-    this._querySettings[settings] = value;
+    for (var key in settings) {
+		
+		this._querySettings[key] = settings[key];
+		
+	}
 
 }
 
@@ -191,8 +195,8 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
 	
 	}
     
-	this._activeQuerySettings["method"]=method;
-	this._activeQuerySettings["params"]=params;
+	//this._activeQuerySettings["method"]=method;
+	//this._activeQuerySettings["params"]=params;
 	
 	//console.log("rpc by "+this._name+" : "+method+" "+JSON.stringify(this._activeQuerySettings))
 	
@@ -257,6 +261,8 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
             
             Twister._activeDHTQueries--;
             
+            thisResource._log("dhtget result: "+JSON.stringify(res));
+          
             if (res[0]) {
 				
 				var signatureVerification = thisResource.getQuerySetting("signatureVerification");
@@ -292,14 +298,14 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                     });
                     
                 } else { 
-                  
+                  thisResource._verified = true;
                   thisResource._log("no signature verification needed");
                   cbfunc(res); 
                 }
                 
             } else { 
-              cbfunc(res);
               thisResource._handleError({message:"dht resource is empty"}); 
+              cbfunc(res);
             }
             
         }, function(error) {

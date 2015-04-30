@@ -99,8 +99,8 @@ TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
     this._stream._checkQueryAndDo(cbfunc, querySettings);
 };
 
-TwisterUser.prototype.doPost = function (id, cbfunc) {
-    this._stream._doPost(id, cbfunc);
+TwisterUser.prototype.doPost = function (id, cbfunc, querySettings) {
+    this._stream._doPost(id, cbfunc, querySettings);
 }
 
 

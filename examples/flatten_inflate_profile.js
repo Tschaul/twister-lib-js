@@ -5,11 +5,6 @@ TwisterProfile = require("../src/TwisterProfile.js")
 
 var tschaul = Twister.getUser("tschaul");
 
-Twister.init({
-    host: 'http://user:pwd@127.0.0.1:28332',
-});
-
-
 Twister.getUser("tschaul").doProfile(function(profile){
     
     var flatData = profile.flatten()

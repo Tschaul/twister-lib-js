@@ -63,6 +63,10 @@ TwisterProfile.prototype.getAllFields = function () {
     
 }
 
+TwisterProfile.prototype.getUsername = function () {
+  return this._name;
+}
+
 /** @function
  * @name getField 
  * @description returns a single field of the profile

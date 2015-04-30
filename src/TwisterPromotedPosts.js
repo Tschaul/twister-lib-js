@@ -49,7 +49,7 @@ TwisterPromotedPosts.prototype.inflate = function (flatData) {
     
     for(var i = 0; i < flatData.posts.length; i++){
         
-        var newpost = new TwisterPost(flatData.posts[i].data,this._scope);
+        var newpost = new TwisterPost(flatData.posts[i].data,flatData.posts[i].signature,this._scope);
         newpost.inflate(flatData.posts[i]);
         this._posts[newpost.getId()]=newpost;
     
@@ -116,7 +116,7 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
 
         var TwisterPost = require('./TwisterPost.js');
 
-        var newpost = new TwisterPost(payload.userpost,thisResource._scope);
+        var newpost = new TwisterPost(payload.userpost,payload.sig_userpost,thisResource._scope);
 
 		newpost._isPromotedPost = true;
 		
@@ -129,6 +129,8 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
         }
         
         if (cbfunc && signatureVerification=="none") {
+          
+            newpost._verified = true;
             
             cbfunc(newpost);
 

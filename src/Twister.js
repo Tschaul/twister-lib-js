@@ -26,19 +26,9 @@ Twister._signatureVerificationsInProgress = 0;
 
 //default query settings:
 Twister._outdatedLimit = 90;
-Twister._querySettingsByType = {
-    
-    outdatedLimit: {
-        pubkey: 60*60,
-        profile: 60*60,
-        avatar: 60*60,
-        torrent: 60*60,
-        followings: 60*60
-    }
-    
-};
+Twister._querySettingsByType = {};
 Twister._logfunc = function(){};
-Twister._host = "";
+Twister._host = "http://user:pwd@127.0.0.1:28332";
 Twister._timeout = 20000;
 Twister._errorfunc = function(error){console.log("Twister error: "+error.message);};
 
@@ -59,7 +49,7 @@ Twister._promotedPosts = new TwisterPromotedPosts(Twister);
  * @param {bool} options.querySettingsByType 
  * @param {bool} options.maxDHTQueries
  */
-Twister.init = function (options) {
+Twister.setup = function (options) {
 
 	for (var key in options) {
 		
@@ -253,7 +243,7 @@ Twister.deserializeCache = function (flatData) {
 
     if (flatData) {
 
-        Twister.init(flatData.options);
+        Twister.setup(flatData.options);
         
         if (Twister._walletType=="server") {
             var TwisterAccount = require('./ServerWallet/TwisterAccount.js');

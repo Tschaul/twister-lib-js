@@ -9,7 +9,7 @@ var TwisterRetwists = require('./TwisterRetwists.js');
  * Describes a single post of a {@link TwisterUser}.
  * @module
  */
-function TwisterPost(data,scope) {
+function TwisterPost(data,signature,scope) {
     
     var name = data.n;
     var id = data.k;
@@ -18,6 +18,7 @@ function TwisterPost(data,scope) {
     
     this._type = "post";
     this._data = data;
+    this._signature = signature;
 	this._isPromotedPost = false;
     this._replies = new TwisterReplies(name,id,scope);
     this._retwists = new TwisterRetwists(name,id,scope);
@@ -34,6 +35,9 @@ TwisterPost.prototype.flatten = function () {
     
     flatData.retwists = this._retwists.flatten();
     flatData.replies = this._replies.flatten();
+  
+    flatData.isPromotedPost = this._isPromotedPost;
+    flatData.signature = this._signature;
         
     return flatData;
 
@@ -46,6 +50,9 @@ TwisterPost.prototype.inflate = function (flatData) {
     this._replies.inflate(flatData.replies);
     this._retwists.inflate(flatData.retwists);
 
+    this._signature = flatData.signature;
+    this._isPromotedPost = flatData.isPromotedPost;
+  
 }
 
 TwisterPost.prototype._do = function (cbfunc) {
@@ -124,6 +131,14 @@ TwisterPost.prototype.getUsername = function () {
     return this._data.n;
 }
 
+/** @function
+ * @name getUsername 
+ * @description returns the {@link TwisterUser} object of the user that posted the post.
+ */
+TwisterPost.prototype.getUser = function () {
+    return Twister.getUser(this._data.n);
+}
+
 
 /** @function
  * @name isReply 
@@ -138,7 +153,7 @@ TwisterPost.prototype.isReply = function () {
  * @name getReplyUser 
  * @description returns the username of the user to which this post is a reply.
  */
-TwisterPost.prototype.getReplyUser = function () {
+TwisterPost.prototype.getReplyUsername = function () {
     return this._data.reply.n;
 }
 
@@ -217,7 +232,7 @@ TwisterPost.prototype.getRetwistedContent = function () {
  * @name getRetwistedUser 
  * @description returns the username of the retwisted post.
  */
-TwisterPost.prototype.getRetwistedUser = function () {
+TwisterPost.prototype.getRetwistedUsername = function () {
     return this._data.rt.n;
 }
 
@@ -233,8 +248,19 @@ TwisterPost.prototype.doRetwistingPosts = function (cbfunc,querySettings) {
 
 
 /** @function
+ * @name getRetwistedPost 
+ * @description return an uncached and unverified {@link TwisterPost} object of the retwisted post.
+ * @param cbfunc {function} 
+ */
+TwisterPost.prototype.getRetwistedPost = function (cbfunc) {
+    
+    return new TwisterPost(this._data.rt,this._data.sig_rt,this._scope);
+    
+}
+
+/** @function
  * @name doRetwistedPost 
- * @description calls cbfunc the retwisted post.
+ * @description Verifies and caches the retwisted post and calls cbfunc with it.
  * @param cbfunc {function} 
  */
 TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
