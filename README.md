@@ -50,6 +50,7 @@ twister-lib-js passes through all JSON-RPC errors. Internal errors are thrown in
 * 32052: DHT resource is empty. (Only thrown for status profile and avatar resources.)
 * 32060: Post signature could not be verified.
 * 32061: Public key not available on server.
+* 32062: Signatureof retwisted post could not be verified.
 * 32080: Unsupported wallet type.
 * 32081: No wallet users found on the server.
 * 32082: Torrent inactive. Activate torrent first!

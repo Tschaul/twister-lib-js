@@ -1,10 +1,10 @@
  /*
- * To get the basic functionality of twister-lib-js going, we firt need to instantiate the 
- * Twister object from the library using require. If you use the browserified version, 
- * this is already done for you. By default the api endpoint is setup as 
- * http://user:pwd@127.0.0.1:28332 So make sure twisterd is running at that address. 
- * Alternatively you can setup a different host-address by calling Twister.setup({host:"address"}). 
- *
+ * First we need to instantiate the Twister object from the library using require. If you use 
+ * the browserified version ("twister-lib.js" file from the main directoy), this is already 
+ * done for you. By default the api endpoint is setup as http://user:pwd@127.0.0.1:28332 . 
+ * So make sure twisterd is running localy. Alternatively you can setup a different 
+ * host-address by calling Twister.setup({host:"address"}). 
+ * 
  * In the first example The status (latest post) of a user is queried. Because we have not 
  * activated any torrents, it will perform the query on the DHT. More about torrents later.
  * In order to get to the post we first have to get to the corresponding user object by calling

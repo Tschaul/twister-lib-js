@@ -29773,7 +29773,7 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
           resTorrent._lastUpdate = Date.now()/1000;  
           resTorrent._updateInProgress = false;
           
-          thisAccount._log("torrent for "+username+"activated");
+          thisAccount._log("torrent for "+username+" activated");
 
 		}
 		
@@ -29784,6 +29784,48 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
         thisAccount._handleError(ret);
         
     });
+
+}
+
+TwisterAccount.prototype.unfollow = function (username,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  thisAccount.RPC("unfollow",[
+    
+      thisAccount._name,
+      [username]
+    
+  ],function(result){
+
+    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    
+  },function(error){
+      TwisterAccount._handleError(error);
+  });
+
+}
+
+TwisterAccount.prototype.follow = function (username,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  thisAccount.RPC("follow",[
+    
+      thisAccount._name,
+      [username]
+    
+  ],function(result){
+    
+    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    
+  },function(error){
+    thisAccount._handleError(error);
+  });
 
 }
 
@@ -29805,7 +29847,7 @@ TwisterAccount.prototype.updateProfile = function (newdata) {
 		],function(result){
 		
 		},function(error){
-			TwisterAccount._handleError(error);
+          thisAccount._handleError(error);
 		});
 	
 	})
@@ -29830,7 +29872,7 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 		],function(result){
 		
 		},function(error){
-			TwisterAccount._handleError(error);
+          thisAccount._handleError(error);
 		});
 	
 	})
@@ -29864,7 +29906,7 @@ TwisterAccount.prototype.post = function (msg,cbfunc) {
       cbfunc(newpost);
       Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
     },function(error){
-        TwisterAccount._handleError(error);
+      thisAccount._handleError(error);
     });
 
   });
@@ -29901,7 +29943,7 @@ TwisterAccount.prototype.reply = function (replyusername,replyid,msg,cbfunc) {
       cbfunc(newpost);
       Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
     },function(error){
-        TwisterAccount._handleError(error);
+      thisAccount._handleError(error);
     });
 
   });
@@ -29938,7 +29980,7 @@ TwisterAccount.prototype.retwist = function (rtusername,rtid,cbfunc) {
         Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
         
       },function(error){
-          TwisterAccount._handleError(error);
+        thisAccount._handleError(error);
       });
       
     });
@@ -30407,7 +30449,10 @@ TwisterTorrent.prototype._queryAndDo = function (cbfunc) {
     
   } else {
      
-    thisTorrent._handleError({message: "Activate torrent first"});
+    thisTorrent._handleError({
+      message: "Torrent inactive. Activate torrent first!",
+      code: 32082
+    });
     
   }
 
@@ -30824,7 +30869,10 @@ Twister.loadServerAccounts = function (cbfunc) {
 		
 		} else {
 		
-			Twister._handleError({message:"no wallet users found on the server."})
+			Twister._handleError({
+              message: "No wallet users found on the server.",
+              code: 32081
+            })
 		
 		}
 		
@@ -30892,7 +30940,10 @@ Twister.deserializeCache = function (flatData) {
         if (Twister._walletType=="server") {
             var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
         } else {
-            Twister._handleError({message: "Unsupported wallet type."})
+            Twister._handleError({
+              message: "Unsupported wallet type.",
+              code: 32080
+            })
             return;
         }
 
@@ -30974,7 +31025,10 @@ TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
 
             } else {
 			
-				
+				thisResource._handleError({
+                  message: "DHT resource is empty.",
+                  code: 32052
+                })
                 thisResource._revisionNumber=0;
                 thisResource._lastUpdate=Date.now()/1000;
                 cbfunc(thisResource);
@@ -31019,10 +31073,34 @@ TwisterFollowings.prototype._do= function (cbfunc) {
 }
 
 TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
-
-    var currentCounter = 1;
         
-    var thisResource = this;
+  var thisResource = this;
+
+  var Twister = this._scope;
+  
+  var thisStream = Twister.getUser(this._name)._stream;
+  
+  if (thisStream._activeTorrentUser && thisStream._activeTorrentUser==this._name) {
+    
+    thisResource._log("using getfollowing rpc method")
+    
+    var thisAccount = Twister._wallet[this._name];
+    
+    thisAccount.RPC("getfollowing",[thisAccount._name],function(result){
+
+      thisResource._data = result;
+      thisResource._lastUpdate=Date.now()/1000;
+      thisResource._do(cbfunc);
+
+    },function(error){
+      
+      thisResource._handleError(error);
+      
+    });
+    
+  } else {
+  
+    var currentCounter = 1;
 
     thisResource._data = [];
 
@@ -31059,6 +31137,8 @@ TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
     };  
         
     requestTilEmpty(cbfunc);
+    
+  }
         
 }
 
@@ -31610,7 +31690,10 @@ TwisterProfile.prototype._queryAndDo = function (cbfunc) {
 
             } else {
 			
-				
+				thisResource._handleError({
+                  message: "DHT resource is empty.",
+                  code: 32052
+                })
                 thisResource._revisionNumber=0;
                 thisResource._lastUpdate=Date.now()/1000;
                 cbfunc(thisResource);
@@ -31802,7 +31885,10 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
 
 					} else {
 
-						thisResource._handleError({message:"signature of post could not be verified"});
+						thisResource._handleError({
+                          message: "Post signature could not be verified.",
+                          code: 32060
+                        });
 
 					}
 
@@ -31950,7 +32036,14 @@ TwisterPubKey.prototype._queryAndDo = function (cbfunc) {
 
           }
           
-        } else { thisResource._handleError({message:"pubkey not available on server"}) }
+        } else { 
+          
+          thisResource._handleError({
+            message: "Public key not available on server.",
+            code: 32061
+          }) 
+        
+        }
 		
     }, function(ret) {
 
@@ -32012,11 +32105,11 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
             var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
           } catch(e) {
             var retVal = false;	
-            thisResource._handleError({message:"verification went sideways"});
+            thisResource._log("verification went sideways");
           }
         } catch(e) {
           var retVal = false;	
-          thisResource._handleError({message:"signature is malformed"})
+          thisResource._log("signature is malformed");
         }
 
 
@@ -32297,7 +32390,10 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
         return Twister[("_"+setting)];
     }
     
-    this._handleError({message:"unknown query setting was requested."});
+    this._handleError({
+      message:"Unknown query setting was requested.",
+      code: 32051
+    });
 
 }
 
@@ -32431,7 +32527,10 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 								
                             } else {
 
-                                thisResource._handleError({message: "DHT resource signature could not be verified"})
+                                thisResource._handleError({
+                                  message: "DHT resource signature could not be verified",
+                                  code: 32050
+                                })
 
                             }
 
@@ -32714,8 +32813,14 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
 
 
                     } else { 
-                      cbfunc(null);
+			
+                      thisResource._handleError({
+                        message: "DHT resource is empty.",
+                        code: 32052
+                      })
                       thisResource._updateInProgress = false;
+                      cbfunc(null);
+                      
                     }
 
                 }
@@ -32780,16 +32885,50 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
 				pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
 
-
 					if (verified) {
 
 						newpost._verified=true;
+                      
+                        if (newpost.isRetwist()) {
+                          
+                          var post_rt = payload.userpost.rt;
+                          var sig_rt = payload.userpost.sig_rt;
+                          
+                          Twister.getUser(post_rt.n)._doPubKey(function(pubkey){
 
-						if (cbfunc && signatureVerification=="instant") { cbfunc(newpost); }
+                            pubkey.verifySignature(post_rt,sig_rt,function(verified){
+
+                                if (verified) {
+                                  
+                                  if (cbfunc && signatureVerification=="instant") {
+                                    cbfunc(newpost); 
+                                  }
+                                  
+                                } else {
+
+                                  errorfunc.call(thisResource,{
+                                    message: "Signature of retwisted post could not be verified.",
+                                    code: 32062
+                                  });
+                                
+                                }
+                              
+                            });
+                            
+                          });
+                          
+                        } else {
+
+						  if (cbfunc && signatureVerification=="instant") { cbfunc(newpost); }
+                          
+                        }
 
 					} else {
 
-                        errorfunc.call(thisResource,{message:"signature of post could not be verified"});
+                        errorfunc.call(thisResource,{
+                          message: "Post signature could not be verified.",
+                          code: 32060
+                        });
 
 					}
 
@@ -32848,15 +32987,24 @@ TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
           thisResource.dhtget([thisResource._name, "post"+id, "s"],
 
             function (result) {
-          
-              thisResource._activeQuerySettings = {};
-              thisResource._updateInProgress = false;
 
               if (result[0]) {
             
                 thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
                 
+              } else {
+			
+                thisResource._handleError({
+                  message: "DHT resource is empty.",
+                  code: 32052
+                })
+                thisResource._updateInProgress = false;
+                cbfunc(null);
+                
               }
+          
+              thisResource._activeQuerySettings = {};
+              thisResource._updateInProgress = false;
 
             }
 

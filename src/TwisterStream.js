@@ -211,16 +211,50 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
 
 				pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
 
-
 					if (verified) {
 
 						newpost._verified=true;
+                      
+                        if (newpost.isRetwist()) {
+                          
+                          var post_rt = payload.userpost.rt;
+                          var sig_rt = payload.userpost.sig_rt;
+                          
+                          Twister.getUser(post_rt.n)._doPubKey(function(pubkey){
 
-						if (cbfunc && signatureVerification=="instant") { cbfunc(newpost); }
+                            pubkey.verifySignature(post_rt,sig_rt,function(verified){
+
+                                if (verified) {
+                                  
+                                  if (cbfunc && signatureVerification=="instant") {
+                                    cbfunc(newpost); 
+                                  }
+                                  
+                                } else {
+
+                                  errorfunc.call(thisResource,{
+                                    message: "Signature of retwisted post could not be verified.",
+                                    code: 32062
+                                  });
+                                
+                                }
+                              
+                            });
+                            
+                          });
+                          
+                        } else {
+
+						  if (cbfunc && signatureVerification=="instant") { cbfunc(newpost); }
+                          
+                        }
 
 					} else {
 
-                        errorfunc.call(thisResource,{message:"signature of post could not be verified"});
+                        errorfunc.call(thisResource,{
+                          message: "Post signature could not be verified.",
+                          code: 32060
+                        });
 
 					}
 
