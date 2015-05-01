@@ -155,7 +155,10 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
         return Twister[("_"+setting)];
     }
     
-    this._handleError({message:"unknown query setting was requested."});
+    this._handleError({
+      message:"Unknown query setting was requested.",
+      code: 32051
+    });
 
 }
 
@@ -289,7 +292,10 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 								
                             } else {
 
-                                thisResource._handleError({message: "DHT resource signature could not be verified"})
+                                thisResource._handleError({
+                                  message: "DHT resource signature could not be verified",
+                                  code: 32050
+                                })
 
                             }
 
@@ -304,7 +310,7 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                 }
                 
             } else { 
-              thisResource._handleError({message:"dht resource is empty"}); 
+              thisResource._log("dht resource is empty"); 
               cbfunc(res);
             }
             

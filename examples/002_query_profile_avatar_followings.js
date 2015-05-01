@@ -1,6 +1,6 @@
  /*
- * In a very similar way as we can query other user based resources such as the 
- * profile...
+ * Similarly to posts (see previous example), we can query other user based 
+ * resources such as the profile ...
  */
 
 Twister = require("../src/Twister.js")

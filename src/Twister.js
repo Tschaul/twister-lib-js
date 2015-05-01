@@ -180,7 +180,10 @@ Twister.loadServerAccounts = function (cbfunc) {
 		
 		} else {
 		
-			Twister._handleError({message:"no wallet users found on the server."})
+			Twister._handleError({
+              message: "No wallet users found on the server.",
+              code: 32081
+            })
 		
 		}
 		
@@ -248,7 +251,10 @@ Twister.deserializeCache = function (flatData) {
         if (Twister._walletType=="server") {
             var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
         } else {
-            Twister._handleError({message: "Unsupported wallet type."})
+            Twister._handleError({
+              message: "Unsupported wallet type.",
+              code: 32080
+            })
             return;
         }
 

@@ -68,7 +68,14 @@ TwisterPubKey.prototype._queryAndDo = function (cbfunc) {
 
           }
           
-        } else { thisResource._handleError({message:"pubkey not available on server"}) }
+        } else { 
+          
+          thisResource._handleError({
+            message: "Public key not available on server.",
+            code: 32061
+          }) 
+        
+        }
 		
     }, function(ret) {
 
@@ -130,11 +137,11 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
             var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
           } catch(e) {
             var retVal = false;	
-            thisResource._handleError({message:"verification went sideways"});
+            thisResource._log("verification went sideways");
           }
         } catch(e) {
           var retVal = false;	
-          thisResource._handleError({message:"signature is malformed"})
+          thisResource._log("signature is malformed");
         }
 
 

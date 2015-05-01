@@ -139,8 +139,14 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
 
 
                     } else { 
-                      cbfunc(null);
+			
+                      thisResource._handleError({
+                        message: "DHT resource is empty.",
+                        code: 32052
+                      })
                       thisResource._updateInProgress = false;
+                      cbfunc(null);
+                      
                     }
 
                 }

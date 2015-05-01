@@ -151,7 +151,10 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
 
 					} else {
 
-						thisResource._handleError({message:"signature of post could not be verified"});
+						thisResource._handleError({
+                          message: "Post signature could not be verified.",
+                          code: 32060
+                        });
 
 					}
 

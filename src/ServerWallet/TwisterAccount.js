@@ -102,7 +102,7 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
           resTorrent._lastUpdate = Date.now()/1000;  
           resTorrent._updateInProgress = false;
           
-          thisAccount._log("torrent for "+username+"activated");
+          thisAccount._log("torrent for "+username+" activated");
 
 		}
 		
@@ -113,6 +113,48 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
         thisAccount._handleError(ret);
         
     });
+
+}
+
+TwisterAccount.prototype.unfollow = function (username,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  thisAccount.RPC("unfollow",[
+    
+      thisAccount._name,
+      [username]
+    
+  ],function(result){
+
+    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    
+  },function(error){
+      TwisterAccount._handleError(error);
+  });
+
+}
+
+TwisterAccount.prototype.follow = function (username,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  thisAccount.RPC("follow",[
+    
+      thisAccount._name,
+      [username]
+    
+  ],function(result){
+    
+    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    
+  },function(error){
+    thisAccount._handleError(error);
+  });
 
 }
 
@@ -134,7 +176,7 @@ TwisterAccount.prototype.updateProfile = function (newdata) {
 		],function(result){
 		
 		},function(error){
-			TwisterAccount._handleError(error);
+          thisAccount._handleError(error);
 		});
 	
 	})
@@ -159,7 +201,7 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 		],function(result){
 		
 		},function(error){
-			TwisterAccount._handleError(error);
+          thisAccount._handleError(error);
 		});
 	
 	})
@@ -193,7 +235,7 @@ TwisterAccount.prototype.post = function (msg,cbfunc) {
       cbfunc(newpost);
       Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
     },function(error){
-        TwisterAccount._handleError(error);
+      thisAccount._handleError(error);
     });
 
   });
@@ -230,7 +272,7 @@ TwisterAccount.prototype.reply = function (replyusername,replyid,msg,cbfunc) {
       cbfunc(newpost);
       Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
     },function(error){
-        TwisterAccount._handleError(error);
+      thisAccount._handleError(error);
     });
 
   });
@@ -267,7 +309,7 @@ TwisterAccount.prototype.retwist = function (rtusername,rtid,cbfunc) {
         Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
         
       },function(error){
-          TwisterAccount._handleError(error);
+        thisAccount._handleError(error);
       });
       
     });

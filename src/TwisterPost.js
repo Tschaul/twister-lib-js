@@ -150,7 +150,7 @@ TwisterPost.prototype.isReply = function () {
 
 
 /** @function
- * @name getReplyUser 
+ * @name getReplyUsername 
  * @description returns the username of the user to which this post is a reply.
  */
 TwisterPost.prototype.getReplyUsername = function () {
@@ -184,7 +184,7 @@ TwisterPost.prototype.doReplies = function (cbfunc,querySettings) {
  * @param querySettings {Object} 
  */
 TwisterPost.prototype.doPostRepliedTo = function (cbfunc,querySettings) {
-    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc,querySettings);
+    this._scope.getUser(this.getReplyUsername()).doPost(this.getReplyId(),cbfunc,querySettings);
 }
 
 /** @function

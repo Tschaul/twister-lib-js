@@ -20,10 +20,34 @@ TwisterFollowings.prototype._do= function (cbfunc) {
 }
 
 TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
-
-    var currentCounter = 1;
         
-    var thisResource = this;
+  var thisResource = this;
+
+  var Twister = this._scope;
+  
+  var thisStream = Twister.getUser(this._name)._stream;
+  
+  if (thisStream._activeTorrentUser && thisStream._activeTorrentUser==this._name) {
+    
+    thisResource._log("using getfollowing rpc method")
+    
+    var thisAccount = Twister._wallet[this._name];
+    
+    thisAccount.RPC("getfollowing",[thisAccount._name],function(result){
+
+      thisResource._data = result;
+      thisResource._lastUpdate=Date.now()/1000;
+      thisResource._do(cbfunc);
+
+    },function(error){
+      
+      thisResource._handleError(error);
+      
+    });
+    
+  } else {
+  
+    var currentCounter = 1;
 
     thisResource._data = [];
 
@@ -60,6 +84,8 @@ TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
     };  
         
     requestTilEmpty(cbfunc);
+    
+  }
         
 }
 

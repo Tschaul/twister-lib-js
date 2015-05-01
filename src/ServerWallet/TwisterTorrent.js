@@ -180,7 +180,10 @@ TwisterTorrent.prototype._queryAndDo = function (cbfunc) {
     
   } else {
      
-    thisTorrent._handleError({message: "Activate torrent first"});
+    thisTorrent._handleError({
+      message: "Torrent inactive. Activate torrent first!",
+      code: 32082
+    });
     
   }
 

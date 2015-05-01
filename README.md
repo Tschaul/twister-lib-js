@@ -3,7 +3,7 @@ A [Twister](http://twister.net.co) Library in JavaScript
 
 ## Scope of this Project
 
-twister-lib-js handles all querying and manipulation of the Twister P2P network, given the availability of a (remote or local) twisterd service API endpoint. This includes managing the network resource, by bundleing queries and by caching. This also includes the ability sign posts and to encrypt and decrypt direct messages locally.
+twister-lib-js handles all querying and manipulation of the Twister P2P network, given the availability of a (remote or local) twisterd JSON-RPC endpoint. This includes managing the network resource, by bundleing queries and by caching. This also includes the ability sign posts and to encrypt and decrypt direct messages locally.
 
 twister-lib-js should be compilable for as many platforms as possible including:
 - All popular Browsers (for web apps as well as firefoxOS)
@@ -15,13 +15,14 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 
 ## Implementation Status
 
-| Resource    	| query |  post (client side wallet) | post (server side wallet) |
+| Resource    	| query |  manipulate (client side wallet) | manipulate (server side wallet) |
 |-|-|-|-|
-| Posts     	| ✓     |                            |							|
-| Replies     	| ✓     |                            |							|
-| Retwists     	| ✓     |                            |							|
+| Posts     	| ✓     |                            |	✓						|
+| Replies     	| ✓     |                            |	✓						|
+| Retwists     	| ✓     |                            |	✓						|
 | Profile     	| ✓     |                            |	✓						|
 | Avatar     	| ✓     |                            |	✓						|
+| Followings   	| ✓     |                            |	✓						|
 | Mentions     	| ✓     |                            |	-						|
 | Hashtags     	| ✓     |                            |	-						|
 | Promoted Posts|  ✓    |  -                         |	-						|
@@ -31,35 +32,24 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 ## Code Examples
 
 Display the content of the latest post of user tschaul:
+
 ```
 Twister.getUser("tschaul").doStatus(function(post){
   console.log(post.getContent());  
 });
 ```
 
-Display timestamp and content of the 10 latest posts of user tschaul:
-```
-Twister.getUser("tschaul").doLatestPosts(10,function(post){
-  console.log(post.getTimestamp()+": "+post.getContent());  
-});
-```
+For more code examples see /examples
 
-Display timestamp and content of all replies to the post with id 877 of user rysiek:
-```
-Twister.getUser("rysiek").doPost(877,function(post){
-  post.doReplies(function(post){
-    console.log(post.getTimestamp()+": "+post.getContent());  
-  });
-});
-```
+## Error Codes
 
-Serialize the cache to a string
-```
-var string = JSON.stringify(Twister.serializeCache());
-```
+twister-lib-js passes through all JSON-RPC errors. Internal errors are thrown in the same format with codes ranging between 32050 and 32099:
 
-
-Deserialize the cache from a string
-```
-Twister.deserializeCache(JSON.parse(string));
-```
+* 32050: DHT resource signature could not be verified.
+* 32051: Unknown query setting was requested.
+* 32052: DHT resource is empty. (Only thrown for status profile and avatar resources.)
+* 32060: Post signature could not be verified.
+* 32061: Public key not available on server.
+* 32080: Unsupported wallet type.
+* 32081: No wallet users found on the server.
+* 32082: Torrent inactive. Activate torrent first!
