@@ -279,15 +279,24 @@ TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
           thisResource.dhtget([thisResource._name, "post"+id, "s"],
 
             function (result) {
-          
-              thisResource._activeQuerySettings = {};
-              thisResource._updateInProgress = false;
 
               if (result[0]) {
             
                 thisResource._verifyAndCachePost(result[0].p.v,cbfunc);
                 
+              } else {
+			
+                thisResource._handleError({
+                  message: "DHT resource is empty.",
+                  code: 32052
+                })
+                thisResource._updateInProgress = false;
+                cbfunc(null);
+                
               }
+          
+              thisResource._activeQuerySettings = {};
+              thisResource._updateInProgress = false;
 
             }
 
