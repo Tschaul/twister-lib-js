@@ -15,18 +15,18 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 
 ## Implementation Status
 
-| Resource    	| query |  manipulate (client side wallet) | manipulate (server side wallet) |
-|-|-|-|-|
-| Posts     	| ✓     |                            |	✓						|
-| Replies     	| ✓     |                            |	✓						|
-| Retwists     	| ✓     |                            |	✓						|
-| Profile     	| ✓     |                            |	✓						|
-| Avatar     	| ✓     |                            |	✓						|
-| Followings   	| ✓     |                            |	✓						|
-| Mentions     	| ✓     |                            |	-						|
-| Hashtags     	| ✓     |                            |	-						|
-| Promoted Posts|  ✓    |  -                         |	-						|
-| Direct Messages| -    |                            |	✓						|| 
+ Resource | query | manipulate (client side wallet) | manipulate (server side wallet) 
+------|-----|-----|------|
+ Posts     	| ✓     |                            |	✓						
+ Replies     	| ✓     |                            |	✓						
+ Retwists     	| ✓     |                            |	✓						
+ Profile     	| ✓     |                            |	✓						
+ Avatar     	| ✓     |                            |	✓						
+ Followings   	| ✓     |                            |	✓						
+ Mentions     	| ✓     |                            |	-						
+ Hashtags     	| ✓     |                            |	-						
+ Promoted Posts|  ✓    |  -                         |	-						
+ Direct Messages| -    |                            |	✓						
 
 
 ## Code Examples
