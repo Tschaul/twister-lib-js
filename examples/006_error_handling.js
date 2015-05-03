@@ -1,5 +1,5 @@
 /* 
- * In the follwoing we prvoke an error by requestin the status of a user that does not 
+ * In the follwoing we provoke an error by requestin the status of a user that does not 
  * exist. The two most common ways of error handling are to either define a global method 
  * that is called for every error ... 
  */
@@ -32,6 +32,6 @@ Twister.getUser("7567sdddff334").doStatus(function(post){},{
 
 Twister.getUser("7567sdddff334").doStatus(function(post){},{
   errorfunc: function(error){
-    console.log(this._type+" of user "+this._name+" threw and error: "+error.code+": "+error.message);
+    console.log(this._type+" of user "+this._name+" threw an error: "+error.code+" "+error.message);
   }
 });

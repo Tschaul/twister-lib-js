@@ -128,42 +128,14 @@ TwisterPromotedPosts.prototype._verifyAndCachePost =  function (payload,cbfunc) 
         
         }
         
-        if (cbfunc && signatureVerification=="none") {
+        if (cbfunc) {
           
             newpost._verified = true;
             
             cbfunc(newpost);
 
-        } else {
-        
-			if (cbfunc && signatureVerification=="background") { cbfunc(newpost); }
-			
-			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
-
-				pubkey.verifySignature(payload.userpost,payload.sig_userpost,function(verified){
-
-
-					if (verified) {
-
-						thisResource._verified=true;
-
-						if (signatureVerification=="instant") { cbfunc(newpost); }
-
-					} else {
-
-						thisResource._handleError({
-                          message: "Post signature could not be verified.",
-                          code: 32060
-                        });
-
-					}
-
-				});
-
-			});
-				
-		}
-        
+        } 
+      
     }
 
 }

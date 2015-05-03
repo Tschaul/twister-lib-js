@@ -25,7 +25,7 @@ Twister._averageSignatureCompTime = 200;
 Twister._signatureVerificationsInProgress = 0;
 
 //default query settings:
-Twister._outdatedLimit = 90;
+Twister._outdatedLimit = 45;
 Twister._querySettingsByType = {};
 Twister._logfunc = function(){};
 Twister._host = "http://user:pwd@127.0.0.1:28332";

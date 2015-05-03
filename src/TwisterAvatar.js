@@ -45,7 +45,7 @@ TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
                 })
                 thisResource._revisionNumber=0;
                 thisResource._lastUpdate=Date.now()/1000;
-                cbfunc(thisResource);
+                //cbfunc(thisResource);
 			
 			}
 

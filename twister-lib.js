@@ -29689,8 +29689,6 @@ function TwisterAccount(name,scope) {
     
 	this._wallettype = "server";
 	
-	this._privateFollowings = [];
-	
 	this._directmessages = {};
   
     this._torrents = {};
@@ -29706,7 +29704,6 @@ TwisterAccount.prototype.flatten = function () {
     var flatData = TwisterResource.prototype.flatten.call(this);
 
     flatData.wallettype = this._wallettype;
-    flatData.privateFollowings = this._privateFollowings;
     
     flatData.directmessages = [];
     
@@ -31031,7 +31028,7 @@ TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
                 })
                 thisResource._revisionNumber=0;
                 thisResource._lastUpdate=Date.now()/1000;
-                cbfunc(thisResource);
+                //cbfunc(thisResource);
 			
 			}
 
@@ -31696,7 +31693,7 @@ TwisterProfile.prototype._queryAndDo = function (cbfunc) {
                 })
                 thisResource._revisionNumber=0;
                 thisResource._lastUpdate=Date.now()/1000;
-                cbfunc(thisResource);
+                //cbfunc(thisResource);
 			
 			}
 
@@ -32819,7 +32816,7 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
                         code: 32052
                       })
                       thisResource._updateInProgress = false;
-                      cbfunc(null);
+                      //cbfunc(null);
                       
                     }
 
@@ -32875,11 +32872,11 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
               
               thisResource._log("issuing signature verification in background");
               
-              var errorfunc = thisResource.getQuerySetting("errorfunc");
-              
               cbfunc(newpost); 
             
             }
+            
+            var errorfunc = thisResource.getQuerySetting("errorfunc");
 			
 			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
 
@@ -32999,7 +32996,7 @@ TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
                   code: 32052
                 })
                 thisResource._updateInProgress = false;
-                cbfunc(null);
+                //cbfunc(null);
                 
               }
           
@@ -33026,7 +33023,7 @@ TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 
     var retVal = cbfunc(post);
 
-    if( post.getId()!=1 && retVal!==false ) { 
+    if( post.getLastId() && retVal!==false ) { 
 
       post.doPreviousPost(doUntil, querySettings); 
 

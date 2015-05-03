@@ -13,7 +13,7 @@
  * with the result of the query as argument after the query is completed. So "get" functions
  * return the result and "do" function call a callback with the result.
  * 
- * In this particular example, we test weither the post is a retwist and print out the content 
+ * In this particular example, we test whether the post is a retwist and print out the content 
  * of the post or the content of the retwisted post respectively. 
  * 
  * Other methods of the post object are: getUsername(), getTimestamp(), isReply(), 

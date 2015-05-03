@@ -1,6 +1,8 @@
- /*
+/*
  * ... the avatar ...
  */
+
+Twister = require("../src/Twister.js")
 
 Twister.getUser("tschaul").doAvatar(function(avatar){
     

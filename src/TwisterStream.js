@@ -53,8 +53,8 @@ TwisterStream.prototype.inflate = function (flatData) {
 
   this._latestId = flatData.latestId;
   this._activeTorrentUser = flatData.activeTorrentUser;
-
-  for(var i = 0; i < flatData.posts.length; i++){
+  
+  for(var i in flatData.posts){
 
     if (flatData.posts[i].verified) {
 
@@ -145,7 +145,7 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
                         code: 32052
                       })
                       thisResource._updateInProgress = false;
-                      cbfunc(null);
+                      //cbfunc(null);
                       
                     }
 
@@ -201,11 +201,11 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
               
               thisResource._log("issuing signature verification in background");
               
-              var errorfunc = thisResource.getQuerySetting("errorfunc");
-              
               cbfunc(newpost); 
             
             }
+            
+            var errorfunc = thisResource.getQuerySetting("errorfunc");
 			
 			Twister.getUser(thisResource._name)._doPubKey(function(pubkey){
 
@@ -325,7 +325,7 @@ TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
                   code: 32052
                 })
                 thisResource._updateInProgress = false;
-                cbfunc(null);
+                //cbfunc(null);
                 
               }
           
@@ -352,7 +352,7 @@ TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 
     var retVal = cbfunc(post);
 
-    if( post.getId()!=1 && retVal!==false ) { 
+    if( post.getLastId() && retVal!==false ) { 
 
       post.doPreviousPost(doUntil, querySettings); 
 

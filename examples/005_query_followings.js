@@ -6,6 +6,8 @@
  * error handling in the next example.
  */
 
+Twister = require("../src/Twister.js")
+
 Twister.getUser("tschaul").doFollowings(function(followings){
     
   console.log("the full names of tschauls followings are:");

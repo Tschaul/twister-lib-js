@@ -7,19 +7,22 @@
  * conversation request so their outputs do not overlapp
  */
 
+Twister = require("../src/Twister.js")
+
 var goUpConversation = function (post) {
         
-    if (post.isReply()) {
+  if (post.isReply()) {
 
-        post.doPostRepliedTo(goUpConversation);
+    post.doPostRepliedTo(goUpConversation);
 
-    } else {
-      
-      console.log(post.getUsername()+": "+post.getContent())
+  } else {
 
-      post.doReplies(doRepliesRecursive);
+    console.log(post.getUsername()+": "+post.getContent())
 
-    }
+    post.doReplies(doRepliesRecursive);
+
+  }
+  
 }
 
 var doRepliesRecursive = function (replies) {
@@ -31,10 +34,6 @@ var doRepliesRecursive = function (replies) {
 
 };
 
-setTimeout(function(){
+console.log("full conversation of black_puppydog:post729")
 
-  console.log("full conversation of black_puppydog:post729")
-
-  Twister.getUser("black_puppydog").doPost(729,goUpConversation);
-  
-},2000);
+Twister.getUser("black_puppydog").doPost(729,goUpConversation);

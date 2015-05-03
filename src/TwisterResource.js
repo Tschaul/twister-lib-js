@@ -162,7 +162,7 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
 
 }
 
-TwisterResource.prototype.setQuerySetting = function (settings) {
+TwisterResource.prototype.setQuerySettings = function (settings) {
 
     for (var key in settings) {
 		

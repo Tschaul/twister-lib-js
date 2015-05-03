@@ -28,6 +28,16 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
  Promoted Posts|  ✓    |  -                         |	-						
  Direct Messages| -    |                            |	✓						
 
+## Todo
+
+* Implement methods to create or import accounts.
+* Invoke rollback mechanism after failed signature validation. Right now resources with invalid signature will remain cache and if queried a second time do not throw an error.
+* Implement method to control cache size (e.g. by throwing away every resource that is older than a given timestamp)
+* Implement group chats
+* Implement get...Promise(...) functions (e.g. getProfilePromise(...) ) that work with https://github.com/yortus/asyncawait to avoid callback hells
+* Implement code specific error functions (e.g. "errorfunc_32052" catches errors with code 32052)
+* When updating a resource (status, profile, avatar...) add the updated resource to the cache but flag it as "dirty" and rollback if the resource is not confirmed after a certain time.
+* Throw more errors instead of crashing
 
 ## Code Examples
 
@@ -47,7 +57,7 @@ twister-lib-js passes through all JSON-RPC errors. Internal errors are thrown in
 
 * 32050: DHT resource signature could not be verified.
 * 32051: Unknown query setting was requested.
-* 32052: DHT resource is empty. (Only thrown for status profile and avatar resources.)
+* 32052: DHT resource is empty. (Only thrown for status, post, profile and avatar resources.)
 * 32060: Post signature could not be verified.
 * 32061: Public key not available on server.
 * 32062: Signatureof retwisted post could not be verified.

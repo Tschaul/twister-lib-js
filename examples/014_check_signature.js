@@ -1,21 +1,18 @@
- /*
+/*
  * The following example demonstrates how twister-lib-js internally verifies signatures. 
  * If signature verification is activated (set to either "background" or "instant") 
  * twister-lib-js will try to verify the signatures of all resources queried through 
  * the JSON-RPC. In "background" mode the callback of the query will be run before 
  * the signature is verified to maintain responsiveness. In "instant" mode the callback 
  * of the query is only run after a sucessfull signature verification. In both cases an 
- * unsucesfull signature verification will call  errorfunc. Try messing with the signature 
- * changing the signature verification mode.
+ * unsucesfull signature verification will call errorfunc. Try messing with the signature 
+ * and changing the signature verification mode.
  *
  */
 
 Twister = require("../src/Twister.js")
 
-Twister.setup({
-  signatureVerification: "instant",
-  errorfunc: function(error){console.log("self defined error function: "+error.message)}
-});
+Twister.setup({signatureVerification: "instant"});
 
 var tschaul = Twister.getUser("tschaul");
 

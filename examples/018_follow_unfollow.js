@@ -1,7 +1,8 @@
+/* 
+ * Following and unfollowing is also done through the account object.
+ */
 
 Twister = require("../src/Twister.js");
-
-//Twister.setup({logfunc:function(log){console.log(log)}})
 
 Twister.loadServerAccounts(function(){
 	
