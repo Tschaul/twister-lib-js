@@ -37,7 +37,7 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 * Implement get...Promise(...) functions (e.g. getProfilePromise(...) ) that work with https://github.com/yortus/asyncawait to avoid callback hells
 * Implement code specific error functions (e.g. "errorfunc_32052" catches errors with code 32052)
 * When updating a resource (status, profile, avatar...) add the updated resource to the cache but flag it as "dirty" and rollback if the resource is not confirmed after a certain time.
-* Throw more errors instead of crashing
+* Throw more errors instead of showing strange behavior
 
 ## Code Examples
 
