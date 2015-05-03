@@ -84,6 +84,10 @@ TwisterResource.prototype._do =  function (cbfunc) {
 
 }
 
+TwisterResource.prototype.inCache = function () {
+    return (this._lastUpdate>0);
+}
+
 /**
  * Checks whether cached resource is outdated and invokes an update if needed. Calls cbfunc on the resource when done.
  * @function
@@ -92,7 +96,7 @@ TwisterResource.prototype._do =  function (cbfunc) {
  */
 TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
     
-    if (!querySettings) {querySettings={};} 
+    if (querySettings===undefined) {querySettings={};} 
     //else {console.log(querySettings)}
     
     var Twister = this._scope;
@@ -153,7 +157,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
  */
 TwisterResource.prototype.getQuerySetting = function (setting) {
 
-	//console.log(this._name);
+	//console.log(setting,this._activeQuerySettings);
 	
     var Twister = this._scope;
     
@@ -179,13 +183,20 @@ TwisterResource.prototype.getQuerySetting = function (setting) {
         return Twister[("_"+setting)];
     }
     
-    this._handleError({message:"unknown query setting was requested."});
+    this._handleError({
+      message:"Unknown query setting was requested.",
+      code: 32051
+    });
 
 }
 
-TwisterResource.prototype.setQuerySetting = function (setting,value) {
+TwisterResource.prototype.setQuerySettings = function (settings) {
 
-    this._querySettings[settings] = value;
+    for (var key in settings) {
+		
+		this._querySettings[key] = settings[key];
+		
+	}
 
 }
 
@@ -215,8 +226,8 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
 	
 	}
     
-	this._activeQuerySettings["method"]=method;
-	this._activeQuerySettings["params"]=params;
+	//this._activeQuerySettings["method"]=method;
+	//this._activeQuerySettings["params"]=params;
 	
 	//console.log("rpc by "+this._name+" : "+method+" "+JSON.stringify(this._activeQuerySettings))
 	
@@ -281,6 +292,8 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
             
             Twister._activeDHTQueries--;
             
+            thisResource._log("dhtget result: "+JSON.stringify(res));
+          
             if (res[0]) {
 				
 				var signatureVerification = thisResource.getQuerySetting("signatureVerification");
@@ -307,7 +320,10 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 								
                             } else {
 
-                                thisResource._handleError({message: "DHT resource signature could not be verified"})
+                                thisResource._handleError({
+                                  message: "DHT resource signature could not be verified",
+                                  code: 32050
+                                })
 
                             }
 
@@ -316,12 +332,15 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                     });
                     
                 } else { 
-                  
+                  thisResource._verified = true;
                   thisResource._log("no signature verification needed");
                   cbfunc(res); 
                 }
                 
-            } else { thisResource._handleError({message:"dht resource is empty"}); }
+            } else { 
+              thisResource._log("dht resource is empty"); 
+              cbfunc(res);
+            }
             
         }, function(error) {
             
@@ -350,13 +369,13 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul><h3>Global</h3><ul><li><a href="global.html#getAllFields">getAllFields</a></li><li><a href="global.html#getField">getField</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Mon Apr 27 2015 13:25:39 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Sun May 03 2015 15:37:38 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

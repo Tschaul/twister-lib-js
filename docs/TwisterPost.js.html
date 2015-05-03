@@ -37,7 +37,7 @@ var TwisterRetwists = require('./TwisterRetwists.js');
  * Describes a single post of a {@link TwisterUser}.
  * @module
  */
-function TwisterPost(data,scope) {
+function TwisterPost(data,signature,scope) {
     
     var name = data.n;
     var id = data.k;
@@ -46,6 +46,7 @@ function TwisterPost(data,scope) {
     
     this._type = "post";
     this._data = data;
+    this._signature = signature;
 	this._isPromotedPost = false;
     this._replies = new TwisterReplies(name,id,scope);
     this._retwists = new TwisterRetwists(name,id,scope);
@@ -62,6 +63,9 @@ TwisterPost.prototype.flatten = function () {
     
     flatData.retwists = this._retwists.flatten();
     flatData.replies = this._replies.flatten();
+  
+    flatData.isPromotedPost = this._isPromotedPost;
+    flatData.signature = this._signature;
         
     return flatData;
 
@@ -74,6 +78,9 @@ TwisterPost.prototype.inflate = function (flatData) {
     this._replies.inflate(flatData.replies);
     this._retwists.inflate(flatData.retwists);
 
+    this._signature = flatData.signature;
+    this._isPromotedPost = flatData.isPromotedPost;
+  
 }
 
 TwisterPost.prototype._do = function (cbfunc) {
@@ -120,6 +127,7 @@ TwisterPost.prototype.doPreviousPost = function (cbfunc,querySettings) {
 	if (!this._isPromotedPost) {
 		this._scope.getUser(this.getUsername()).doPost(this.getLastId(),cbfunc,querySettings);
 	} else {
+      //console.log(this)
 		this._scope.getPromotedPosts()._doPost(this.getLastId(),cbfunc,querySettings);
 	}
 	
@@ -151,6 +159,14 @@ TwisterPost.prototype.getUsername = function () {
     return this._data.n;
 }
 
+/** @function
+ * @name getUsername 
+ * @description returns the {@link TwisterUser} object of the user that posted the post.
+ */
+TwisterPost.prototype.getUser = function () {
+    return Twister.getUser(this._data.n);
+}
+
 
 /** @function
  * @name isReply 
@@ -162,10 +178,10 @@ TwisterPost.prototype.isReply = function () {
 
 
 /** @function
- * @name getReplyUser 
+ * @name getReplyUsername 
  * @description returns the username of the user to which this post is a reply.
  */
-TwisterPost.prototype.getReplyUser = function () {
+TwisterPost.prototype.getReplyUsername = function () {
     return this._data.reply.n;
 }
 
@@ -196,7 +212,7 @@ TwisterPost.prototype.doReplies = function (cbfunc,querySettings) {
  * @param querySettings {Object} 
  */
 TwisterPost.prototype.doPostRepliedTo = function (cbfunc,querySettings) {
-    this._scope.getUser(this.getReplyUser()).doPost(this.getReplyId(),cbfunc,querySettings);
+    this._scope.getUser(this.getReplyUsername()).doPost(this.getReplyId(),cbfunc,querySettings);
 }
 
 /** @function
@@ -244,13 +260,13 @@ TwisterPost.prototype.getRetwistedContent = function () {
  * @name getRetwistedUser 
  * @description returns the username of the retwisted post.
  */
-TwisterPost.prototype.getRetwistedUser = function () {
+TwisterPost.prototype.getRetwistedUsername = function () {
     return this._data.rt.n;
 }
 
 /** @function
  * @name doRetwistingPosts 
- * @description calls cbfunc with every post that is retwisting this post.
+ * @description calls cbfunc with an array of the post that are retwisting this post.
  * @param cbfunc {function} 
  * @param querySettings {Object} 
  */
@@ -260,8 +276,19 @@ TwisterPost.prototype.doRetwistingPosts = function (cbfunc,querySettings) {
 
 
 /** @function
+ * @name getRetwistedPost 
+ * @description return an uncached and unverified {@link TwisterPost} object of the retwisted post.
+ * @param cbfunc {function} 
+ */
+TwisterPost.prototype.getRetwistedPost = function (cbfunc) {
+    
+    return new TwisterPost(this._data.rt,this._data.sig_rt,this._scope);
+    
+}
+
+/** @function
  * @name doRetwistedPost 
- * @description calls cbfunc the retwisted post.
+ * @description Verifies and caches the retwisted post and calls cbfunc with it.
  * @param cbfunc {function} 
  */
 TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
@@ -296,13 +323,13 @@ TwisterPost.prototype.doRetwistedPost = function (cbfunc) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul><h3>Global</h3><ul><li><a href="global.html#getAllFields">getAllFields</a></li><li><a href="global.html#getField">getField</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Mon Apr 27 2015 13:25:39 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Sun May 03 2015 15:37:38 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>

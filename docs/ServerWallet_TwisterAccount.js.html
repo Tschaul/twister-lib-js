@@ -46,8 +46,6 @@ function TwisterAccount(name,scope) {
     
 	this._wallettype = "server";
 	
-	this._privateFollowings = [];
-	
 	this._directmessages = {};
   
     this._torrents = {};
@@ -63,7 +61,6 @@ TwisterAccount.prototype.flatten = function () {
     var flatData = TwisterResource.prototype.flatten.call(this);
 
     flatData.wallettype = this._wallettype;
-    flatData.privateFollowings = this._privateFollowings;
     
     flatData.directmessages = [];
     
@@ -130,7 +127,7 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
           resTorrent._lastUpdate = Date.now()/1000;  
           resTorrent._updateInProgress = false;
           
-          thisAccount._log("torrent for "+username+"activated");
+          thisAccount._log("torrent for "+username+" activated");
 
 		}
 		
@@ -144,32 +141,145 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
 }
 
-TwisterAccount.prototype.updateProfile = function (newdata) {
+TwisterAccount.prototype.unfollow = function (username,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  thisAccount.RPC("unfollow",[
+    
+      thisAccount._name,
+      [username]
+    
+  ],function(result){
+
+    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    
+  },function(error){
+      TwisterAccount._handleError(error);
+  });
+
+}
+
+TwisterAccount.prototype.follow = function (username,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  thisAccount.RPC("follow",[
+    
+      thisAccount._name,
+      [username]
+    
+  ],function(result){
+    
+    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    
+  },function(error){
+    thisAccount._handleError(error);
+  });
+
+}
+
+TwisterAccount.prototype.updateProfile = function (newdata,cbfunc) {
 
 	var thisAccount = this;
     
     var Twister = this._scope;
+    var thisUser = Twister.getUser(this._name);
     
-    Twister.getUser(this._name).doProfile(function(profile){
+    thisUser.doProfile(function(profile){
 	
-		thisAccount.RPC("dhtput",[
-			thisAccount._name,
-			"profile",
-			"s",
-			JSON.stringify(newdata),
-			thisAccount._name,
-			profile._revisionNumber+1
-		],function(result){
-		
-		},function(error){
-			TwisterAccount._handleError(error);
-		});
+      thisAccount.RPC("dhtput",[
+          thisAccount._name,
+          "profile",
+          "s",
+          newdata,
+          thisAccount._name,
+          profile._revisionNumber+1
+      ],function(result){
+
+        var TwisterProfile = require("../TwisterProfile.js");
+
+        var newprofile = new TwisterProfile(thisAccount._name,Twister);
+        newprofile._data = newdata;
+        cbfunc(newprofile);
+
+      },function(error){
+        thisAccount._handleError(error);
+      });
 	
-	})
+	},{errorfunc:function(error){
+    
+      if (error.code==32052) {
+       
+        Twister.getUser(this._name)._profile._lastUpdate = Date.now()/1000;
+        Twister.getUser(this._name)._profile._revisionNumber = 0;
+        Twister.getUser(this._name)._profile._updateInProgress = false;
+        
+        thisAccount.updateProfileFields(newdata,cbfunc);
+        
+      }
+      
+    }})
 
 }
 
-TwisterAccount.prototype.updateAvatar = function (newdata) {
+TwisterAccount.prototype.updateProfileFields = function (newdata,cbfunc) {
+
+	var thisAccount = this;
+    
+    var Twister = this._scope;
+    var thisUser = Twister.getUser(this._name);
+  
+    thisUser.doProfile(function(profile){
+      
+      var olddata = JSON.parse(JSON.stringify(profile._data));
+      
+      for (var key in newdata) {
+
+          olddata[key] = newdata[key];
+
+      }
+      
+      thisAccount.RPC("dhtput",[
+          thisAccount._name,
+          "profile",
+          "s",
+          olddata,
+          thisAccount._name,
+          profile._revisionNumber+1
+        ],function(result){
+          
+          var TwisterProfile = require("../TwisterProfile.js");
+          
+          var newprofile = new TwisterProfile(thisAccount._name,Twister);
+          newprofile._data = olddata;
+          cbfunc(newprofile);
+        
+        },function(error){
+          thisAccount._handleError(error);
+      });
+	
+    },{errorfunc:function(error){
+    
+      if (error.code==32052) {
+       
+        Twister.getUser(this._name)._profile._lastUpdate = Date.now()/1000;
+        Twister.getUser(this._name)._profile._revisionNumber = 0;
+        Twister.getUser(this._name)._profile._updateInProgress = false;
+        
+        thisAccount.updateProfileFields(newdata,cbfunc);
+        
+      }
+      
+    }})
+
+}
+
+TwisterAccount.prototype.updateAvatar = function (newdata,cbfunc) {
 
 	var thisAccount = this;
     
@@ -179,18 +289,146 @@ TwisterAccount.prototype.updateAvatar = function (newdata) {
 	
 		thisAccount.RPC("dhtput",[
 			thisAccount._name,
-			"profile",
+			"avatar",
 			"s",
-			JSON.stringify(newdata),
+			newdata,
 			thisAccount._name,
 			avatar._revisionNumber+1
 		],function(result){
+          
+          var TwisterAvatar = require("../TwisterAvatar.js");
+          
+          var newprofile = new TwisterAvatar(thisAccount._name,Twister);
+          newprofile._data = newdata;
+          cbfunc(newprofile);
 		
 		},function(error){
-			TwisterAccount._handleError(error);
+          thisAccount._handleError(error);
 		});
 	
-	})
+	},{errorfunc:function(error){
+    
+      if (error.code==32052) {
+       
+        Twister.getUser(this._name)._avatar._lastUpdate = Date.now()/1000;
+        Twister.getUser(this._name)._avatar._revisionNumber = 0;
+        Twister.getUser(this._name)._avatar._updateInProgress = false;
+        
+        thisAccount.updateAvatar(newdata,cbfunc);
+        
+      }
+      
+    }})
+
+}
+
+TwisterAccount.prototype.post = function (msg,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
+
+    var newid = thisTorrent._latestId+1;
+    //thisTorrent._latestId = newid;
+
+    thisAccount.RPC("newpostmsg",[
+        thisAccount._name,
+        newid,
+        msg
+    ],function(result){
+      
+      var TwisterPost = require("../TwisterPost.js");      
+      var data = {};
+      data.n = thisAccount._name;
+      data.k = newid;
+      data.time = Math.round(Date.now()/1000);
+      data.msg = msg;
+      var newpost = new TwisterPost(data,"",Twister);
+      cbfunc(newpost);
+      Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+    },function(error){
+      thisAccount._handleError(error);
+    });
+
+  });
+
+}
+
+TwisterAccount.prototype.reply = function (replyusername,replyid,msg,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
+
+    var newid = thisTorrent._latestId+1;
+    //thisTorrent._latestId = newid;
+
+    thisAccount.RPC("newpostmsg",[
+        thisAccount._name,
+        newid,
+        msg,
+        replyusername,
+        replyid
+    ],function(result){
+      
+      var TwisterPost = require("../TwisterPost.js");      
+      var data = {};
+      data.n = thisAccount._name;
+      data.k = newid;
+      data.time = Math.round(Date.now()/1000);
+      data.msg = msg;
+      data.reply = { k: replyid, n: replyusername };
+      var newpost = new TwisterPost(data,"",Twister);
+      cbfunc(newpost);
+      Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+    },function(error){
+      thisAccount._handleError(error);
+    });
+
+  });
+
+}
+
+TwisterAccount.prototype.retwist = function (rtusername,rtid,cbfunc) {
+  
+  var thisAccount = this;
+    
+  var Twister = this._scope;
+
+  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
+
+    var newid = thisTorrent._latestId+1;
+    //thisTorrent._latestId = newid;
+    
+    Twister.getUser(rtusername).doPost(rtid,function(post){
+
+      thisAccount.RPC("newrtmsg",[
+          thisAccount._name,
+          newid,
+          {  sig_userpost: post._signature, userpost: post._data }
+      ],function(result){
+
+        var TwisterPost = require("../TwisterPost.js");      
+        var data = {};
+        data.n = thisAccount._name;
+        data.k = newid;
+        data.time = Math.round(Date.now()/1000);
+        data.rt = post._data;
+        var newpost = new TwisterPost(data,"",Twister);
+        cbfunc(newpost);
+        Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+        
+      },function(error){
+        thisAccount._handleError(error);
+      });
+      
+    });
+
+  });
 
 }
 
@@ -243,13 +481,13 @@ TwisterAccount.prototype.doLatestDirectMessagesUntil = function (username, cbfun
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-Twister.html">Twister</a></li><li><a href="module-TwisterAvatar.html">TwisterAvatar</a></li><li><a href="module-TwisterFollowings.html">TwisterFollowings</a></li><li><a href="module-TwisterHashtag.html">TwisterHashtag</a></li><li><a href="module-TwisterMentions.html">TwisterMentions</a></li><li><a href="module-TwisterPost.html">TwisterPost</a></li></ul><h3>Classes</h3><ul><li><a href="ServerWallet_TwisterAccount.html">ServerWallet_TwisterAccount</a></li><li><a href="TwisterDirectMessages.html">TwisterDirectMessages</a></li><li><a href="TwisterProfile.html">TwisterProfile</a></li><li><a href="TwisterPromotedPosts.html">TwisterPromotedPosts</a></li><li><a href="TwisterPubKey.html">TwisterPubKey</a></li><li><a href="TwisterReplies.html">TwisterReplies</a></li><li><a href="TwisterResource.html">TwisterResource</a></li><li><a href="TwisterRetwists.html">TwisterRetwists</a></li><li><a href="TwisterStream.html">TwisterStream</a></li><li><a href="TwisterTorrent.html">TwisterTorrent</a></li><li><a href="TwisterUser.html">TwisterUser</a></li></ul><h3>Global</h3><ul><li><a href="global.html#getAllFields">getAllFields</a></li><li><a href="global.html#getField">getField</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Mon Apr 27 2015 13:25:39 GMT+0200 (CEST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta3</a> on Sun May 03 2015 15:37:38 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>
