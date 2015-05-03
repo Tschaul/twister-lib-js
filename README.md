@@ -49,7 +49,7 @@ Twister.getUser("tschaul").doStatus(function(post){
 });
 ```
 
-For more code examples see [/examples](https://github.com/Tschaul/twister-lib-js/tree/master/examples)
+For more code examples in tutorial form, see [/examples](https://github.com/Tschaul/twister-lib-js/tree/master/examples)
 
 ## Error Codes
 
