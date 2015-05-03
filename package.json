@@ -1,6 +1,6 @@
 {
   "name": "twister-lib-js",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A javascript library for twister (see twister.net.co)",
   "main": "src/Twister.js",
   "scripts": {
@@ -20,10 +20,15 @@
     "torrent"
   ],
   "author": "Julian Steinwachs (@tschaul)",
-  "license": "MIT-license (./LICENSE)",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Tschaul/twister-lib-js/issues"
   },
   "homepage": "https://github.com/Tschaul/twister-lib-js",
-  "dependencies": {}
+  "dependencies": {
+    "bencode":"*",
+    "bitcoinjs-lib":"*",
+    "inherits":"*",
+    "request":"*"
+  }
 }
