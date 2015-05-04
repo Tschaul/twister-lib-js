@@ -29,6 +29,8 @@
     "bencode":"*",
     "bitcoinjs-lib":"*",
     "inherits":"*",
-    "request":"*"
+    "request":"*",
+    "crypto": "*",
+    "buffer": "*"
   }
 }

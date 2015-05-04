@@ -39,6 +39,26 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 * When updating a resource (status, profile, avatar...) add the updated resource to the cache but flag it as "dirty" and rollback if the resource is not confirmed after a certain time.
 * Throw more errors instead of showing strange behavior
 
+## Usage
+
+#### In a Node Project
+
+From inside the project folder run
+```
+npm install twister-lib-js
+```
+Then inside your code import the library using
+```
+Twister = require('twister-lib-js');
+```
+
+#### In a Webapp
+
+Download the `twister-lib.js` file into you project folder. Link to it inside html using
+```
+<script src="path/to/twister-lib.js"></script>
+```
+
 ## Code Examples
 
 Display the content of the latest post of user tschaul:
