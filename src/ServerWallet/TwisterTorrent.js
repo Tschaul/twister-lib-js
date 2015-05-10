@@ -135,15 +135,18 @@ TwisterTorrent.prototype._queryAndDo = function (cbfunc) {
         thisTorrent._log("updating other torrents based on getlasthave result")
         
         for (var username in res) {
+          
+          if (username in thisAccount._torrents) {
 
-          var resTorrent = thisAccount._torrents[username];
+            var resTorrent = thisAccount._torrents[username];
 
-          if (resTorrent._active) {
+            if (resTorrent._active) {
 
-            resTorrent._latestId = res[username];       
-            resTorrent._lastUpdate = Date.now()/1000;  
-            resTorrent._updateInProgress = false;
+              resTorrent._latestId = res[username];       
+              resTorrent._lastUpdate = Date.now()/1000;  
+              resTorrent._updateInProgress = false;
 
+            }
           }
           
         }
