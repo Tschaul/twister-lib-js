@@ -33,7 +33,6 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 ### Next Version
 
 * Implement methods to create or import accounts.
-* Implement method to control cache size (e.g. by throwing away every resource that is older than a given timestamp)
 * Implement group chats
 
 ### At Some Point
