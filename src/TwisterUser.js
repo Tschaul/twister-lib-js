@@ -31,6 +31,12 @@ function TwisterUser(name,scope) {
 
 module.exports = TwisterUser;
 
+TwisterUser.prototype.trim = function () {
+  
+  delete Twister._userCache[this._name];
+  
+}
+
 TwisterUser.prototype.flatten = function () {
 
     return {
@@ -61,6 +67,34 @@ TwisterUser.prototype.inflate = function (flatData) {
     this._stream.inflate(flatData.stream);
     this._mentions.inflate(flatData.mentions);
 
+}
+
+TwisterUser.prototype.trim = function (timestamp) {
+
+  var keepUser = false;
+  
+  this._profile.trim(timestamp);
+  keepUser = keepUser || this._profile.inCache();
+  
+  this._avatar.trim(timestamp);
+  keepUser = keepUser || this._avatar.inCache();
+  
+  this._followings.trim(timestamp);
+  keepUser = keepUser || this._followings.inCache();
+  
+  this._mentions.trim(timestamp);
+  keepUser = keepUser || this._mentions.inCache();
+  
+  this._stream.trim(timestamp);
+  keepUser = keepUser || this._stream.inCache();
+  
+  this._pubkey.trim(timestamp);
+  keepUser = keepUser || this._pubkey.inCache();
+
+  if ( !keepUser ) {
+    delete this._scope._userCache[this._name];
+  }
+  
 }
 
 TwisterUser.prototype.getUsername = function () {

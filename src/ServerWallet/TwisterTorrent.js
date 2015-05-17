@@ -46,6 +46,18 @@ TwisterTorrent.prototype.inflate = function (flatData) {
 
 }
 
+TwisterTorrent.prototype.trim = function (timestamp) {
+
+  if ( !this._active && (!timestamp || timestamp > this._lastUpdate) ){
+
+    var thisAccount = this._scope.getAccount(this._walletusername);
+
+    delete thisAccount._torrents[this._name];
+    
+  }
+
+}
+
 TwisterTorrent.prototype.activate = function () {
   
   this._active = true;

@@ -55,6 +55,32 @@ TwisterPost.prototype.inflate = function (flatData) {
   
 }
 
+TwisterPost.prototype.trim = function (timestamp) {
+
+  var keepPost = false;
+  
+  this._replies.trim(timestamp);
+  keepPost = keepPost || this._replies.inCache();
+
+  this._retwists.trim(timestamp);
+  keepPost = keepPost || this._retwists.inCache();
+
+  if ( !keepPost && ( !timestamp || timestamp > this.getTimestamp() ) ){
+
+    if (this._isPromotedPost) {
+      var thisStream = this._scope._promotedPosts;
+    } else {
+      var thisStream = this._scope.getUser(this._name)._stream;
+    }
+
+    delete thisStream._posts[this.getId()];
+
+    thisStream._latestId = Math.max.apply(Math,Object.keys(thisStream._posts));
+
+  }
+
+}
+
 TwisterPost.prototype._do = function (cbfunc) {
     cbfunc(this);
 }
@@ -136,7 +162,7 @@ TwisterPost.prototype.getUsername = function () {
  * @description returns the {@link TwisterUser} object of the user that posted the post.
  */
 TwisterPost.prototype.getUser = function () {
-    return Twister.getUser(this._data.n);
+    return this._scope.getUser(this._data.n);
 }
 
 

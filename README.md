@@ -30,14 +30,18 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 
 ## Todo
 
+### Next Version
+
 * Implement methods to create or import accounts.
-* Invoke rollback mechanism after failed signature validation. Right now resources with invalid signature will remain cache and if queried a second time do not throw an error.
 * Implement method to control cache size (e.g. by throwing away every resource that is older than a given timestamp)
 * Implement group chats
+
+### At Some Point
+
+* Implement bind-methods (e.g. bindProfile(...) ) that repeatedly queries the resource and invokes a callback function for every update.
+* When posting a new resource revision (status, profile, avatar...) add the updated resource to the cache but flag it as "dirty" and rollback if the resource is not confirmed after a certain time.
 * Implement get...Promise(...) functions (e.g. getProfilePromise(...) ) that work with https://github.com/yortus/asyncawait to avoid callback hells
 * Implement code specific error functions (e.g. "errorfunc_32052" catches errors with code 32052)
-* When updating a resource (status, profile, avatar...) add the updated resource to the cache but flag it as "dirty" and rollback if the resource is not confirmed after a certain time.
-* Throw more errors instead of showing strange behavior
 
 ## Usage
 

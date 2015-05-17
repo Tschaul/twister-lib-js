@@ -14,8 +14,6 @@ TwisterBinding.prototype.callListener = function (cbfunc) {
     if (this._arg === undefined || this._arg === null) {
         this._context[this._listener](cbfunc);
     } else { 
-	    //console.log("calling " + this._listener + " with argument " + this._arg);
-	    //console.log(cbfunc);
         this._context[this._listener](this._arg,cbfunc);
     }
     

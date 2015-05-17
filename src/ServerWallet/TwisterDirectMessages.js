@@ -75,30 +75,68 @@ TwisterDirectMessages.prototype.flattenMessage = function (msg) {
 
 TwisterDirectMessages.prototype.inflateMessage = function (msg) {
 
-	if (msg.fromMe) {
-		msg.sender = this._walletusername;
-		msg.receiver = this._name;		
-	} else {
-		msg.sender = this._name;	
-		msg.receiver = this._walletusername;
-	}
-	
-	var thisDirectMessages = this;
-	
-	msg.getId = function () {return this.id};
-	msg.getContent = function () {return this.text};
-	msg.getSender = function () {return this.sender};
-	msg.getReceiver = function () {return this.sender};
-	msg.getTimestamp = function () {return this.time};
-	msg.doPreviousMessage = function (cbfunc) { thisDirectMessages._doMessage(this.id-1,cbfunc) };
-	
-	return msg;
+  if (msg.fromMe) {
+      msg.sender = this._walletusername;
+      msg.receiver = this._name;		
+  } else {
+      msg.sender = this._name;	
+      msg.receiver = this._walletusername;
+  }
+
+  var thisDirectMessages = this;
+
+  msg.getId = function () {return this.id};
+  msg.getContent = function () {return this.text};
+  msg.getSender = function () {return this.sender};
+  msg.getReceiver = function () {return this.sender};
+  msg.getTimestamp = function () {return this.time};
+  msg.doPreviousMessage = function (cbfunc) { thisDirectMessages._doMessage(this.id-1,cbfunc) };
+
+  return msg;
+
+}
+
+TwisterDirectMessages.prototype.trim = function (timestamp) {
+
+  for (var id in this._posts) {
+      
+    if ( id!=this._latestId && ( !timestamp || timestamp > this._messages[id].getTimestamp() ) ) {
+      
+      delete this._messages[id];
+      
+    }
+
+  }
+  
+  var postCount = Object.keys(this._posts).length;
+  
+  if ( postCount<=1 && (!timestamp || timestamp > this._lastUpdate) ){
+    
+    if ( this._posts[this._latestId] && (
+      !timestamp || timestamp>this._messages[this._latestId].getTimestamp() 
+    )) {
+
+      delete this._posts[this._latestId];
+
+    }
+    
+    var postCount = Object.keys(this._posts).length;
+
+    if (postCount==0) {
+    
+      var thisAccount = this._scope.getAccount(this._walletusername);
+
+      delete thisAccount._diretmessages[this._name];
+      
+    }
+
+  } 
 
 }
 
 TwisterDirectMessages.prototype._do =  function (cbfunc) {
     
-    this._doMessage(this._latestId,cbfunc);
+  this._doMessage(this._latestId,cbfunc);
     
 }
 

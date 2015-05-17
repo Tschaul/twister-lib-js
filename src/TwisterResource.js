@@ -10,6 +10,8 @@ function TwisterResource (name,scope) {
     this._scope = scope;
     this._name = name;
 	this._hasParentUser = true;
+  
+    this._stash = null;
 	
     this._data = null;
     this._verified = false;
@@ -99,7 +101,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
                 
                 thisResource._do(cbfunc);
               
-                thisResource._log("resource not in cahce. querying");
+                thisResource._log("resource not in cache. querying");
                 
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
@@ -273,9 +275,11 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                 var signingUser = res[0].sig_user;
                 
                 if (signatureVerification!="none" 
-					&& (args[2]="m" || (args[0]==signingUser) ) ) {
+					&& (args[2]=="m" || (args[0]==signingUser) ) ) {
                   
                     thisResource._log("issuing signature verification");
+                  
+                    var stash = JSON.parse(JSON.stringify(thisResource.flatten()));
                 
                     if (signatureVerification=="background") { cbfunc(res); }
 
@@ -292,6 +296,8 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 								
                             } else {
 
+                                thisResource.inflate(stash);
+                              
                                 thisResource._handleError({
                                   message: "DHT resource signature could not be verified",
                                   code: 32050

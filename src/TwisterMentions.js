@@ -6,7 +6,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the mentions of a {@link TwisterUser}.
  * @module
  */
-TwisterMentions = function (name,scope) {
+var TwisterMentions = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "mentions";
@@ -15,6 +15,20 @@ TwisterMentions = function (name,scope) {
 }
 
 inherits(TwisterMentions,TwisterResource);
+
+TwisterMentions.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterMentions = require("./TwisterMentions.js");
+    
+    thisUser._mentions = new TwisterMentions(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterMentions.prototype._do = function (cbfunc) {
 	this.doPosts(cbfunc);

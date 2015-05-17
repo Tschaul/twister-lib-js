@@ -7,7 +7,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the stream of posts of a {@link TwisterUser}.
  * @class
  */
-TwisterStream = function (name,scope) {
+var TwisterStream = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     
@@ -23,6 +23,44 @@ TwisterStream = function (name,scope) {
 
 inherits(TwisterStream,TwisterResource);
 
+TwisterStream.prototype.trim = function (timestamp) {
+
+  for (var id in this._posts) {
+      
+    if (id!=this._latestId) {
+      
+      this._posts[id].trim(timestamp);
+      
+    }
+
+  }
+  
+  var postCount = Object.keys(this._posts).length;
+  
+  if ( postCount<=1 && (!timestamp || timestamp > this._lastUpdate) && !this._activeTorrentUser ) {
+    
+    if (this._posts[this._latestId]) {
+
+      this._posts[this._latestId].trim();
+
+    }
+    
+    var postCount = Object.keys(this._posts).length;
+
+    if (postCount==0) {
+    
+      var thisUser = this._scope.getUser(this._name);
+
+      var TwisterStream = require("./TwisterStream.js");
+
+      thisUser._stream = new TwisterStream(this._name,this._scope);
+      
+    }
+
+  } 
+
+}
+
 TwisterStream.prototype.flatten = function () {
 
     var flatData = TwisterResource.prototype.flatten.call(this);
@@ -37,9 +75,7 @@ TwisterStream.prototype.flatten = function () {
     flatData.latestId  = this._latestId;
     flatData.activeTorrentUser  = this._activeTorrentUser;
     
-    
     return flatData;
-
 
 }
 
@@ -231,6 +267,8 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
                                   }
                                   
                                 } else {
+                                  
+                                  newpost.trim();
 
                                   errorfunc.call(thisResource,{
                                     message: "Signature of retwisted post could not be verified.",
@@ -250,6 +288,8 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
                         }
 
 					} else {
+                                  
+                        newpost.trim();
 
                         errorfunc.call(thisResource,{
                           message: "Post signature could not be verified.",

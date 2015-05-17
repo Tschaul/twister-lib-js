@@ -29750,6 +29750,19 @@ TwisterAccount.prototype.inflate = function (flatData) {
 
 }
 
+TwisterAccount.prototype.trim = function (timestamp) {
+
+  for (var username in this._directmessages){
+    this._directmessages[username].trim(timestamp);
+  }
+
+  for (var username in this._torrents){
+    this._torrents[username].trim(timestamp);
+  }
+  
+}
+
+
 TwisterAccount.prototype.getUsername = function () {return this._name}
 
 TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
@@ -30193,30 +30206,68 @@ TwisterDirectMessages.prototype.flattenMessage = function (msg) {
 
 TwisterDirectMessages.prototype.inflateMessage = function (msg) {
 
-	if (msg.fromMe) {
-		msg.sender = this._walletusername;
-		msg.receiver = this._name;		
-	} else {
-		msg.sender = this._name;	
-		msg.receiver = this._walletusername;
-	}
-	
-	var thisDirectMessages = this;
-	
-	msg.getId = function () {return this.id};
-	msg.getContent = function () {return this.text};
-	msg.getSender = function () {return this.sender};
-	msg.getReceiver = function () {return this.sender};
-	msg.getTimestamp = function () {return this.time};
-	msg.doPreviousMessage = function (cbfunc) { thisDirectMessages._doMessage(this.id-1,cbfunc) };
-	
-	return msg;
+  if (msg.fromMe) {
+      msg.sender = this._walletusername;
+      msg.receiver = this._name;		
+  } else {
+      msg.sender = this._name;	
+      msg.receiver = this._walletusername;
+  }
+
+  var thisDirectMessages = this;
+
+  msg.getId = function () {return this.id};
+  msg.getContent = function () {return this.text};
+  msg.getSender = function () {return this.sender};
+  msg.getReceiver = function () {return this.sender};
+  msg.getTimestamp = function () {return this.time};
+  msg.doPreviousMessage = function (cbfunc) { thisDirectMessages._doMessage(this.id-1,cbfunc) };
+
+  return msg;
+
+}
+
+TwisterDirectMessages.prototype.trim = function (timestamp) {
+
+  for (var id in this._posts) {
+      
+    if ( id!=this._latestId && ( !timestamp || timestamp > this._messages[id].getTimestamp() ) ) {
+      
+      delete this._messages[id];
+      
+    }
+
+  }
+  
+  var postCount = Object.keys(this._posts).length;
+  
+  if ( postCount<=1 && (!timestamp || timestamp > this._lastUpdate) ){
+    
+    if ( this._posts[this._latestId] && (
+      !timestamp || timestamp>this._messages[this._latestId].getTimestamp() 
+    )) {
+
+      delete this._posts[this._latestId];
+
+    }
+    
+    var postCount = Object.keys(this._posts).length;
+
+    if (postCount==0) {
+    
+      var thisAccount = this._scope.getAccount(this._walletusername);
+
+      delete thisAccount._diretmessages[this._name];
+      
+    }
+
+  } 
 
 }
 
 TwisterDirectMessages.prototype._do =  function (cbfunc) {
     
-    this._doMessage(this._latestId,cbfunc);
+  this._doMessage(this._latestId,cbfunc);
     
 }
 
@@ -30398,6 +30449,18 @@ TwisterTorrent.prototype.inflate = function (flatData) {
   TwisterResource.prototype.inflate.call(this,flatData);
 
   this._active = flatData.active;
+
+}
+
+TwisterTorrent.prototype.trim = function (timestamp) {
+
+  if ( !this._active && (!timestamp || timestamp > this._lastUpdate) ){
+
+    var thisAccount = this._scope.getAccount(this._walletusername);
+
+    delete thisAccount._torrents[this._name];
+    
+  }
 
 }
 
@@ -31070,6 +31133,24 @@ Twister.deserializeCache = function (flatData) {
     
 }
 
+Twister.trimCache = function (timestamp) {
+    
+  for (var username in this._userCache){
+      this._userCache[username].trim(timestamp);
+  }
+
+  for (var username in this._wallet){
+      this._wallet[username].trim(timestamp);
+  }
+
+  for (var tag in this._hashtags){
+      this._hashtags[tag].trim(timestamp);
+  }
+  
+  this._promotedPosts.trim(timestamp);
+
+}
+
 module.exports = Twister;
 
 },{"./ServerWallet/TwisterAccount.js":139,"./TwisterHashtag.js":145,"./TwisterPromotedPosts.js":149,"./TwisterResource.js":152,"./TwisterUser.js":155}],143:[function(require,module,exports){
@@ -31081,7 +31162,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the avatar of a {@link TwisterUser}.
  * @module 
  */
-TwisterAvatar = function (name,scope) {
+var TwisterAvatar = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
   
@@ -31092,6 +31173,20 @@ TwisterAvatar = function (name,scope) {
 inherits(TwisterAvatar,TwisterResource);
 
 module.exports = TwisterAvatar;
+
+TwisterAvatar.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterAvatar = require("./TwisterAvatar.js");
+    
+    thisUser._avatar = new TwisterAvatar(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
 
@@ -31139,7 +31234,7 @@ TwisterAvatar.prototype.getUrl = function () {
     return this._data;
     
 }
-},{"./TwisterResource.js":152,"inherits":52}],144:[function(require,module,exports){
+},{"./TwisterAvatar.js":143,"./TwisterResource.js":152,"inherits":52}],144:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -31148,7 +31243,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the followings of a {@link TwisterUser}
  * @module
  */
-TwisterFollowings = function (name,scope) {
+var TwisterFollowings = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "followings";
@@ -31156,6 +31251,20 @@ TwisterFollowings = function (name,scope) {
 }
 
 inherits(TwisterFollowings,TwisterResource);
+
+TwisterFollowings.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterFollowings = require("./TwisterFollowings.js");
+    
+    thisUser._followings = new TwisterFollowings(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterFollowings.prototype._do= function (cbfunc) {
 	this.doUsers(cbfunc);
@@ -31266,7 +31375,7 @@ TwisterFollowings.prototype.doUsers = function(cbfunc) {
 }
 
 module.exports = TwisterFollowings;
-},{"./TwisterResource.js":152,"inherits":52}],145:[function(require,module,exports){
+},{"./TwisterFollowings.js":144,"./TwisterResource.js":152,"inherits":52}],145:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -31276,7 +31385,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes a hashtag resource.
  * @module
  */
-TwisterHashtag = function (name,scope) {
+var TwisterHashtag = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "hashtag";
@@ -31286,6 +31395,16 @@ TwisterHashtag = function (name,scope) {
 }
 
 inherits(TwisterHashtag,TwisterResource);
+
+TwisterHashtag.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    delete this._scope._hashtags[this._name];
+    
+  }
+
+}
 
 TwisterHashtag.prototype._do = function (cbfunc) {
 	this.doPosts(cbfunc);
@@ -31366,7 +31485,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the mentions of a {@link TwisterUser}.
  * @module
  */
-TwisterMentions = function (name,scope) {
+var TwisterMentions = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "mentions";
@@ -31375,6 +31494,20 @@ TwisterMentions = function (name,scope) {
 }
 
 inherits(TwisterMentions,TwisterResource);
+
+TwisterMentions.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterMentions = require("./TwisterMentions.js");
+    
+    thisUser._mentions = new TwisterMentions(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterMentions.prototype._do = function (cbfunc) {
 	this.doPosts(cbfunc);
@@ -31447,7 +31580,7 @@ TwisterMentions.prototype.doPosts = function (cbfunc) {
 }
 
 module.exports = TwisterMentions;
-},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],147:[function(require,module,exports){
+},{"./TwisterMentions.js":146,"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],147:[function(require,module,exports){
 "use strict";
 
 var inherits = require('inherits');
@@ -31503,6 +31636,32 @@ TwisterPost.prototype.inflate = function (flatData) {
     this._signature = flatData.signature;
     this._isPromotedPost = flatData.isPromotedPost;
   
+}
+
+TwisterPost.prototype.trim = function (timestamp) {
+
+  var keepPost = false;
+  
+  this._replies.trim(timestamp);
+  keepPost = keepPost || this._replies.inCache();
+
+  this._retwists.trim(timestamp);
+  keepPost = keepPost || this._retwists.inCache();
+
+  if ( !keepPost && ( !timestamp || timestamp > this.getTimestamp() ) ){
+
+    if (this._isPromotedPost) {
+      var thisStream = this._scope._promotedPosts;
+    } else {
+      var thisStream = this._scope.getUser(this._name)._stream;
+    }
+
+    delete thisStream._posts[this.getId()];
+
+    thisStream._latestId = Math.max.apply(Math,Object.keys(thisStream._posts));
+
+  }
+
 }
 
 TwisterPost.prototype._do = function (cbfunc) {
@@ -31586,7 +31745,7 @@ TwisterPost.prototype.getUsername = function () {
  * @description returns the {@link TwisterUser} object of the user that posted the post.
  */
 TwisterPost.prototype.getUser = function () {
-    return Twister.getUser(this._data.n);
+    return this._scope.getUser(this._data.n);
 }
 
 
@@ -31745,7 +31904,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the profile of a {@link TwisterUser}.
  * @class
  */
-TwisterProfile = function (name,scope) {
+var TwisterProfile = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     
@@ -31757,6 +31916,20 @@ TwisterProfile = function (name,scope) {
 inherits(TwisterProfile,TwisterResource);
 
 module.exports = TwisterProfile;
+
+TwisterProfile.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterProfile = require("./TwisterProfile.js");
+    
+    thisUser._profile = new TwisterProfile(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterProfile.prototype._queryAndDo = function (cbfunc) {
 
@@ -31820,7 +31993,7 @@ TwisterProfile.prototype.getField = function (fieldname) {
   } else { return null }
     
 }
-},{"./TwisterResource.js":152,"inherits":52}],149:[function(require,module,exports){
+},{"./TwisterProfile.js":148,"./TwisterResource.js":152,"inherits":52}],149:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -31829,7 +32002,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the promoted posts that are part of the twister blockchain.
  * @class
  */
-TwisterPromotedPosts = function (scope) {
+var TwisterPromotedPosts = function (scope) {
     
     var name = "promoted";
 	this._hasParentUser = false;
@@ -31878,6 +32051,42 @@ TwisterPromotedPosts.prototype.inflate = function (flatData) {
     
     }
 
+}
+
+TwisterPromotedPosts.prototype.trim =  function (timestamp) {
+  
+  for (var id in this._posts) {
+      
+    if (id!=this._latestId) {
+      
+      this._posts[id].trim(timestamp);
+      
+    }
+
+  }
+  
+  var postCount = Object.keys(this._posts).length;
+  
+  if ( postCount<=1 && (!timestamp || timestamp > this._lastUpdate) ){
+    
+    if (this._posts[this._latestId]) {
+
+      this._posts[this._latestId].trim();
+
+    }
+    
+    var postCount = Object.keys(this._posts).length;
+
+    if (postCount==0) {
+
+      var TwisterPromotedPosts = require("./TwisterPromotedPosts.js");
+
+      this._scope._promotedPosts = new TwisterPromotedPosts(this._name,this._scope);
+      
+    }
+
+  } 
+  
 }
 
 TwisterPromotedPosts.prototype._do =  function (cbfunc) {
@@ -32025,7 +32234,7 @@ TwisterPromotedPosts.prototype.doLatestPostsUntil = function (cbfunc, querySetti
 module.exports = TwisterPromotedPosts;
 
 
-},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],150:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterPromotedPosts.js":149,"./TwisterResource.js":152,"inherits":52}],150:[function(require,module,exports){
 (function (Buffer){
 var inherits = require('inherits');
 
@@ -32041,12 +32250,11 @@ var twister_network = {
     pubKeyHash: 0x00,
 }
 
-
 /**
  * Describes the public key of a user.
  * @class
  */
-TwisterPubKey = function (name,scope) {
+var TwisterPubKey = function (name,scope) {
     
     this._name = name;
     this._data =  null;
@@ -32074,6 +32282,20 @@ TwisterPubKey.prototype.inflate = function (flatData) {
         this._btcKey = Bitcoin.ECPubKey.fromHex(this._data);
     
     }
+
+}
+
+TwisterPubKey.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterPubKey = require("./TwisterPubKey.js");
+    
+    thisUser._pubkey = new TwisterPubKey(this._name,this._scope);
+    
+  }
 
 }
 
@@ -32188,7 +32410,7 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
 }
 }).call(this,require("buffer").Buffer)
-},{"./TwisterResource.js":152,"bencode":1,"bitcoinjs-lib":43,"buffer":172,"crypto":178,"inherits":52}],151:[function(require,module,exports){
+},{"./TwisterPubKey.js":150,"./TwisterResource.js":152,"bencode":1,"bitcoinjs-lib":43,"buffer":172,"crypto":178,"inherits":52}],151:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -32197,7 +32419,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the replies to a {ælink TwisterPost}.
  * @class
  */
-TwisterReplies = function (name,id,scope) {
+var TwisterReplies = function (name,id,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "replies";
@@ -32224,6 +32446,20 @@ TwisterReplies.prototype.inflate = function (flatData) {
     TwisterResource.prototype.inflate.call(this,flatData);
     
     this._id = flatData.id;
+
+}
+
+TwisterReplies.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisPost = this._scope.getUser(this._name).getPost(this._id);
+
+    var TwisterReplies = require("./TwisterReplies.js");
+    
+    thisPost._replies = new TwisterReplies(this._name,this._id,this._scope);
+    
+  }
 
 }
 
@@ -32293,7 +32529,7 @@ TwisterReplies.prototype.doPosts = function (cbfunc) {
 }
 
 module.exports = TwisterReplies;
-},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],152:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterReplies.js":151,"./TwisterResource.js":152,"inherits":52}],152:[function(require,module,exports){
 "use strict";
 
 /**
@@ -32306,6 +32542,8 @@ function TwisterResource (name,scope) {
     this._scope = scope;
     this._name = name;
 	this._hasParentUser = true;
+  
+    this._stash = null;
 	
     this._data = null;
     this._verified = false;
@@ -32395,7 +32633,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
                 
                 thisResource._do(cbfunc);
               
-                thisResource._log("resource not in cahce. querying");
+                thisResource._log("resource not in cache. querying");
                 
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
@@ -32569,9 +32807,11 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
                 var signingUser = res[0].sig_user;
                 
                 if (signatureVerification!="none" 
-					&& (args[2]="m" || (args[0]==signingUser) ) ) {
+					&& (args[2]=="m" || (args[0]==signingUser) ) ) {
                   
                     thisResource._log("issuing signature verification");
+                  
+                    var stash = JSON.parse(JSON.stringify(thisResource.flatten()));
                 
                     if (signatureVerification=="background") { cbfunc(res); }
 
@@ -32588,6 +32828,8 @@ TwisterResource.prototype.dhtget = function (args,cbfunc) {
 								
                             } else {
 
+                                thisResource.inflate(stash);
+                              
                                 thisResource._handleError({
                                   message: "DHT resource signature could not be verified",
                                   code: 32050
@@ -32637,7 +32879,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the retwists of a {@link TwisterPost}.
  * @class
  */
-TwisterRetwists = function (name,id,scope) {
+var TwisterRetwists = function (name,id,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "retwists";
@@ -32664,6 +32906,20 @@ TwisterRetwists.prototype.inflate = function (flatData) {
     TwisterResource.prototype.inflate.call(this,flatData);
     
     this._id = flatData.id;
+
+}
+
+TwisterRetwists.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisPost = this._scope.getUser(this._name).getPost(this._id);
+
+    var TwisterRetwists = require("./TwisterRetwists.js");
+    
+    thisPost._retwists = new TwisterRetwists(this._name,this._id,this._scope);
+    
+  }
 
 }
 
@@ -32724,7 +32980,7 @@ TwisterRetwists.prototype.doPosts = function (cbfunc) {
         var username = nandk[0];
         var id = parseInt(nandk[1]);
         
-		posts.push(Twister.getUser(username).getPost(id));
+		posts.push(this._scope.getUser(username).getPost(id));
 		
     }
 	
@@ -32732,7 +32988,7 @@ TwisterRetwists.prototype.doPosts = function (cbfunc) {
 }
 
 module.exports = TwisterRetwists;
-},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],154:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"./TwisterRetwists.js":153,"inherits":52}],154:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
@@ -32742,7 +32998,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the stream of posts of a {@link TwisterUser}.
  * @class
  */
-TwisterStream = function (name,scope) {
+var TwisterStream = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     
@@ -32758,6 +33014,44 @@ TwisterStream = function (name,scope) {
 
 inherits(TwisterStream,TwisterResource);
 
+TwisterStream.prototype.trim = function (timestamp) {
+
+  for (var id in this._posts) {
+      
+    if (id!=this._latestId) {
+      
+      this._posts[id].trim(timestamp);
+      
+    }
+
+  }
+  
+  var postCount = Object.keys(this._posts).length;
+  
+  if ( postCount<=1 && (!timestamp || timestamp > this._lastUpdate) && !this._activeTorrentUser ) {
+    
+    if (this._posts[this._latestId]) {
+
+      this._posts[this._latestId].trim();
+
+    }
+    
+    var postCount = Object.keys(this._posts).length;
+
+    if (postCount==0) {
+    
+      var thisUser = this._scope.getUser(this._name);
+
+      var TwisterStream = require("./TwisterStream.js");
+
+      thisUser._stream = new TwisterStream(this._name,this._scope);
+      
+    }
+
+  } 
+
+}
+
 TwisterStream.prototype.flatten = function () {
 
     var flatData = TwisterResource.prototype.flatten.call(this);
@@ -32772,9 +33066,7 @@ TwisterStream.prototype.flatten = function () {
     flatData.latestId  = this._latestId;
     flatData.activeTorrentUser  = this._activeTorrentUser;
     
-    
     return flatData;
-
 
 }
 
@@ -32966,6 +33258,8 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
                                   }
                                   
                                 } else {
+                                  
+                                  newpost.trim();
 
                                   errorfunc.call(thisResource,{
                                     message: "Signature of retwisted post could not be verified.",
@@ -32985,6 +33279,8 @@ TwisterStream.prototype._verifyAndCachePost =  function (payload,cbfunc) {
                         }
 
 					} else {
+                                  
+                        newpost.trim();
 
                         errorfunc.call(thisResource,{
                           message: "Post signature could not be verified.",
@@ -33100,7 +33396,7 @@ TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 module.exports = TwisterStream;
 
 
-},{"./TwisterPost.js":147,"./TwisterResource.js":152,"inherits":52}],155:[function(require,module,exports){
+},{"./TwisterPost.js":147,"./TwisterResource.js":152,"./TwisterStream.js":154,"inherits":52}],155:[function(require,module,exports){
 'use strict';
 
 var TwisterProfile = require('./TwisterProfile.js');
@@ -33134,6 +33430,12 @@ function TwisterUser(name,scope) {
 
 module.exports = TwisterUser;
 
+TwisterUser.prototype.trim = function () {
+  
+  delete Twister._userCache[this._name];
+  
+}
+
 TwisterUser.prototype.flatten = function () {
 
     return {
@@ -33164,6 +33466,34 @@ TwisterUser.prototype.inflate = function (flatData) {
     this._stream.inflate(flatData.stream);
     this._mentions.inflate(flatData.mentions);
 
+}
+
+TwisterUser.prototype.trim = function (timestamp) {
+
+  var keepUser = false;
+  
+  this._profile.trim(timestamp);
+  keepUser = keepUser || this._profile.inCache();
+  
+  this._avatar.trim(timestamp);
+  keepUser = keepUser || this._avatar.inCache();
+  
+  this._followings.trim(timestamp);
+  keepUser = keepUser || this._followings.inCache();
+  
+  this._mentions.trim(timestamp);
+  keepUser = keepUser || this._mentions.inCache();
+  
+  this._stream.trim(timestamp);
+  keepUser = keepUser || this._stream.inCache();
+  
+  this._pubkey.trim(timestamp);
+  keepUser = keepUser || this._pubkey.inCache();
+
+  if ( !keepUser ) {
+    delete this._scope._userCache[this._name];
+  }
+  
 }
 
 TwisterUser.prototype.getUsername = function () {

@@ -6,7 +6,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the followings of a {@link TwisterUser}
  * @module
  */
-TwisterFollowings = function (name,scope) {
+var TwisterFollowings = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "followings";
@@ -14,6 +14,20 @@ TwisterFollowings = function (name,scope) {
 }
 
 inherits(TwisterFollowings,TwisterResource);
+
+TwisterFollowings.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterFollowings = require("./TwisterFollowings.js");
+    
+    thisUser._followings = new TwisterFollowings(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterFollowings.prototype._do= function (cbfunc) {
 	this.doUsers(cbfunc);

@@ -12,12 +12,11 @@ var twister_network = {
     pubKeyHash: 0x00,
 }
 
-
 /**
  * Describes the public key of a user.
  * @class
  */
-TwisterPubKey = function (name,scope) {
+var TwisterPubKey = function (name,scope) {
     
     this._name = name;
     this._data =  null;
@@ -45,6 +44,20 @@ TwisterPubKey.prototype.inflate = function (flatData) {
         this._btcKey = Bitcoin.ECPubKey.fromHex(this._data);
     
     }
+
+}
+
+TwisterPubKey.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterPubKey = require("./TwisterPubKey.js");
+    
+    thisUser._pubkey = new TwisterPubKey(this._name,this._scope);
+    
+  }
 
 }
 

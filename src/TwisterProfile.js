@@ -6,7 +6,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the profile of a {@link TwisterUser}.
  * @class
  */
-TwisterProfile = function (name,scope) {
+var TwisterProfile = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     
@@ -18,6 +18,20 @@ TwisterProfile = function (name,scope) {
 inherits(TwisterProfile,TwisterResource);
 
 module.exports = TwisterProfile;
+
+TwisterProfile.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterProfile = require("./TwisterProfile.js");
+    
+    thisUser._profile = new TwisterProfile(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterProfile.prototype._queryAndDo = function (cbfunc) {
 

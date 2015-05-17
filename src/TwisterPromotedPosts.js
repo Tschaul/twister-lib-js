@@ -6,7 +6,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the promoted posts that are part of the twister blockchain.
  * @class
  */
-TwisterPromotedPosts = function (scope) {
+var TwisterPromotedPosts = function (scope) {
     
     var name = "promoted";
 	this._hasParentUser = false;
@@ -55,6 +55,42 @@ TwisterPromotedPosts.prototype.inflate = function (flatData) {
     
     }
 
+}
+
+TwisterPromotedPosts.prototype.trim =  function (timestamp) {
+  
+  for (var id in this._posts) {
+      
+    if (id!=this._latestId) {
+      
+      this._posts[id].trim(timestamp);
+      
+    }
+
+  }
+  
+  var postCount = Object.keys(this._posts).length;
+  
+  if ( postCount<=1 && (!timestamp || timestamp > this._lastUpdate) ){
+    
+    if (this._posts[this._latestId]) {
+
+      this._posts[this._latestId].trim();
+
+    }
+    
+    var postCount = Object.keys(this._posts).length;
+
+    if (postCount==0) {
+
+      var TwisterPromotedPosts = require("./TwisterPromotedPosts.js");
+
+      this._scope._promotedPosts = new TwisterPromotedPosts(this._name,this._scope);
+      
+    }
+
+  } 
+  
 }
 
 TwisterPromotedPosts.prototype._do =  function (cbfunc) {

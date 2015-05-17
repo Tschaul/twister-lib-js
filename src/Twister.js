@@ -292,4 +292,22 @@ Twister.deserializeCache = function (flatData) {
     
 }
 
+Twister.trimCache = function (timestamp) {
+    
+  for (var username in this._userCache){
+      this._userCache[username].trim(timestamp);
+  }
+
+  for (var username in this._wallet){
+      this._wallet[username].trim(timestamp);
+  }
+
+  for (var tag in this._hashtags){
+      this._hashtags[tag].trim(timestamp);
+  }
+  
+  this._promotedPosts.trim(timestamp);
+
+}
+
 module.exports = Twister;

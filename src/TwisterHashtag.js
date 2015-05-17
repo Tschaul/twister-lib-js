@@ -7,7 +7,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes a hashtag resource.
  * @module
  */
-TwisterHashtag = function (name,scope) {
+var TwisterHashtag = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "hashtag";
@@ -17,6 +17,16 @@ TwisterHashtag = function (name,scope) {
 }
 
 inherits(TwisterHashtag,TwisterResource);
+
+TwisterHashtag.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    delete this._scope._hashtags[this._name];
+    
+  }
+
+}
 
 TwisterHashtag.prototype._do = function (cbfunc) {
 	this.doPosts(cbfunc);

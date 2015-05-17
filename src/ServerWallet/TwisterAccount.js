@@ -79,6 +79,19 @@ TwisterAccount.prototype.inflate = function (flatData) {
 
 }
 
+TwisterAccount.prototype.trim = function (timestamp) {
+
+  for (var username in this._directmessages){
+    this._directmessages[username].trim(timestamp);
+  }
+
+  for (var username in this._torrents){
+    this._torrents[username].trim(timestamp);
+  }
+  
+}
+
+
 TwisterAccount.prototype.getUsername = function () {return this._name}
 
 TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {

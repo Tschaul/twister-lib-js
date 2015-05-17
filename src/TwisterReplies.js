@@ -6,7 +6,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the replies to a {ælink TwisterPost}.
  * @class
  */
-TwisterReplies = function (name,id,scope) {
+var TwisterReplies = function (name,id,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "replies";
@@ -33,6 +33,20 @@ TwisterReplies.prototype.inflate = function (flatData) {
     TwisterResource.prototype.inflate.call(this,flatData);
     
     this._id = flatData.id;
+
+}
+
+TwisterReplies.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisPost = this._scope.getUser(this._name).getPost(this._id);
+
+    var TwisterReplies = require("./TwisterReplies.js");
+    
+    thisPost._replies = new TwisterReplies(this._name,this._id,this._scope);
+    
+  }
 
 }
 

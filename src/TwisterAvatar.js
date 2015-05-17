@@ -6,7 +6,7 @@ var TwisterResource = require('./TwisterResource.js');
  * Describes the avatar of a {@link TwisterUser}.
  * @module 
  */
-TwisterAvatar = function (name,scope) {
+var TwisterAvatar = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
   
@@ -17,6 +17,20 @@ TwisterAvatar = function (name,scope) {
 inherits(TwisterAvatar,TwisterResource);
 
 module.exports = TwisterAvatar;
+
+TwisterAvatar.prototype.trim = function (timestamp) {
+
+  if (!timestamp || timestamp > this._lastUpdate){
+
+    var thisUser = this._scope.getUser(this._name);
+
+    var TwisterAvatar = require("./TwisterAvatar.js");
+    
+    thisUser._avatar = new TwisterAvatar(this._name,this._scope);
+    
+  }
+
+}
 
 TwisterAvatar.prototype._queryAndDo = function (cbfunc) {
 
