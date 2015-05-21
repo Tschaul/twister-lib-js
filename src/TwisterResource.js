@@ -79,7 +79,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         
     if (!thisResource._updateInProgress) {
         
-        thisResource._activeQuerySettings = querySettings;
+        thisResource._activeQuerySettings = JSON.parse(JSON.stringify(querySettings));
         thisResource._updateInProgress = true;
 
         var outdatedTimestamp = 0;
