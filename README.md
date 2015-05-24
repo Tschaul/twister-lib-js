@@ -90,3 +90,15 @@ twister-lib-js passes through all JSON-RPC errors. Internal errors are thrown in
 * 32090: Host not reachable.
 * 32091: Request was not processed successfully (http error: HTTP_ERROR_CODE).
 * 32092: An error occurred while parsing the JSON response body.
+
+## Change Log
+
+### 0.2.1
+
+* Better handling of http/connection errors. Error codes: 32090-32092
+
+## 0.2.0
+
+* Resources can now remove themselves from the cache using their own trim() function.
+* New function Twister.trimCache(timestamp) deletes every resource from the cache that is older than the timestamp, or has not been accessed since the timestamp. Needed to manage localStorage size in browsers.
+* Resources with invalid signatures now get removed from the cache.
