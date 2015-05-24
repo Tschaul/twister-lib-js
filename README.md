@@ -87,3 +87,6 @@ twister-lib-js passes through all JSON-RPC errors. Internal errors are thrown in
 * 32080: Unsupported wallet type.
 * 32081: No wallet users found on the server.
 * 32082: Torrent inactive. Activate torrent first!
+* 32090: Host not reachable.
+* 32091: Request was not processed successfully (http error: HTTP_ERROR_CODE).
+* 32092: An error occurred while parsing the JSON response body.

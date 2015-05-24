@@ -231,18 +231,45 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
         }, function(error, response, body) {
             
             if (error) { 
-				
-				error.message = "Host not reachable (http error).";
-				
-				thisResource._handleError(error)
+				                
+                thisResource._handleError({
+                    message: "Host not reachable.",
+                    data: error.code,
+                    code: 32090                    
+                  })
 			
 			} else {
-                var res = JSON.parse(body);
-                if (res.error) {
+              
+              if (response.statusCode<200 || response.statusCode>299) {
+                    
+                  thisResource._handleError({
+                    message: "Request was not processed successfully (http error: "+response.statusCode+").",
+                    data: response.statusCode,
+                    code: 32091                    
+                  })
+                  
+              } else {
+              
+                try {
+                  
+                  var res = JSON.parse(body);
+                  
+                  if (res.error) {
                     thisResource._handleError(res.error);
-                } else {
+                  } else {
                     resultFunc(res.result);
+                  }
+                  
+                } catch (err) {
+
+                  thisResource._handleError({
+                    message: "An error occurred while parsing the JSON response body.",
+                    code: 32092
+                  })
+
                 }
+
+              } 
                 
             }
             
