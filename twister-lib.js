@@ -31151,6 +31151,40 @@ Twister.trimCache = function (timestamp) {
 
 }
 
+Twister._activeQueryIds = {};
+
+Twister.raiseQueryId = function (id) {
+
+  if(!Twister._activeQueryIds[id]){
+    Twister._activeQueryIds[id]={func:null,count:1};
+  }else{
+    Twister._activeQueryIds[id].count++;
+  }
+
+}
+
+Twister.bumpQueryId = function (id) {
+
+  Twister._activeQueryIds[id].count--;
+  if (Twister._activeQueryIds[id].count==0) {
+    if (Twister._activeQueryIds[id].func) { 
+      Twister._activeQueryIds[id].func(); 
+    }
+    delete Twister._activeQueryIds[id];
+  }
+  
+}
+
+Twister.onQueryComplete = function (id, cbfunc){
+
+  if(!Twister._activeQueryIds[id]){
+    Twister._activeQueryIds[id]={func:cbfunc,count:0};
+  }else{
+    Twister._activeQueryIds[id].func=cbfunc;
+  }
+  
+}
+
 module.exports = Twister;
 
 },{"./ServerWallet/TwisterAccount.js":139,"./TwisterHashtag.js":145,"./TwisterPromotedPosts.js":149,"./TwisterResource.js":152,"./TwisterUser.js":155}],143:[function(require,module,exports){
@@ -32613,6 +32647,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         
         thisResource._activeQuerySettings = JSON.parse(JSON.stringify(querySettings));
         thisResource._updateInProgress = true;
+        Twister.raiseQueryId(thisResource._activeQuerySettings["queryId"]);
 
         var outdatedTimestamp = 0;
       
@@ -32624,17 +32659,19 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
             
             thisResource._log("resource present in cache");
           
+            Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
             thisResource._activeQuerySettings = {};
             thisResource._updateInProgress = false;
 
         } else {
+              
+            thisResource._log("resource not in cache. querying");
             
             thisResource._queryAndDo(function(newresource){
                 
                 thisResource._do(cbfunc);
-              
-                thisResource._log("resource not in cache. querying");
                 
+                Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
             
@@ -32709,9 +32746,10 @@ TwisterResource.prototype.setQuerySettings = function (settings) {
 TwisterResource.prototype._handleError = function (error) {
     
     this._updateInProgress = false;
-	
     this.getQuerySetting("errorfunc").call(this,error);
-    
+    Twister.bumpQueryId(this._activeQuerySettings["queryId"]);
+    this._activeQuerySettings={};
+  
 }
 
 TwisterResource.prototype._log = function (log) {
@@ -32763,18 +32801,45 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
         }, function(error, response, body) {
             
             if (error) { 
-				
-				error.message = "Host not reachable (http error).";
-				
-				thisResource._handleError(error)
+				                
+                thisResource._handleError({
+                    message: "Host not reachable.",
+                    data: error.code,
+                    code: 32090                    
+                  })
 			
 			} else {
-                var res = JSON.parse(body);
-                if (res.error) {
+              
+              if (response.statusCode<200 || response.statusCode>299) {
+                    
+                  thisResource._handleError({
+                    message: "Request was not processed successfully (http error: "+response.statusCode+").",
+                    data: response.statusCode,
+                    code: 32091                    
+                  })
+                  
+              } else {
+              
+                try {
+                  
+                  var res = JSON.parse(body);
+                  
+                  if (res.error) {
                     thisResource._handleError(res.error);
-                } else {
+                  } else {
                     resultFunc(res.result);
+                  }
+                  
+                } catch (err) {
+
+                  thisResource._handleError({
+                    message: "An error occurred while parsing the JSON response body.",
+                    code: 32092
+                  })
+
                 }
+
+              } 
                 
             }
             

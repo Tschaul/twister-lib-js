@@ -81,6 +81,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         
         thisResource._activeQuerySettings = JSON.parse(JSON.stringify(querySettings));
         thisResource._updateInProgress = true;
+        Twister.raiseQueryId(thisResource._activeQuerySettings["queryId"]);
 
         var outdatedTimestamp = 0;
       
@@ -92,17 +93,19 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
             
             thisResource._log("resource present in cache");
           
+            Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
             thisResource._activeQuerySettings = {};
             thisResource._updateInProgress = false;
 
         } else {
+              
+            thisResource._log("resource not in cache. querying");
             
             thisResource._queryAndDo(function(newresource){
                 
                 thisResource._do(cbfunc);
-              
-                thisResource._log("resource not in cache. querying");
                 
+                Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
             
@@ -177,9 +180,10 @@ TwisterResource.prototype.setQuerySettings = function (settings) {
 TwisterResource.prototype._handleError = function (error) {
     
     this._updateInProgress = false;
-	
     this.getQuerySetting("errorfunc").call(this,error);
-    
+    Twister.bumpQueryId(this._activeQuerySettings["queryId"]);
+    this._activeQuerySettings={};
+  
 }
 
 TwisterResource.prototype._log = function (log) {

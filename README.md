@@ -93,6 +93,10 @@ twister-lib-js passes through all JSON-RPC errors. Internal errors are thrown in
 
 ## Change Log
 
+## 0.3.0
+
+* New query setting `queryId`. Can be used to mark multiple queries with a common id. With the `Twister.onQueryComplete(...)` function a handler can be registered that is triggered when the last query is completed. see examples/021_deep_fetching.js
+
 ### 0.2.1
 
 * Better handling of http/connection errors. Error codes: 32090-32092

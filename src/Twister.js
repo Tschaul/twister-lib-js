@@ -310,4 +310,38 @@ Twister.trimCache = function (timestamp) {
 
 }
 
+Twister._activeQueryIds = {};
+
+Twister.raiseQueryId = function (id) {
+
+  if(!Twister._activeQueryIds[id]){
+    Twister._activeQueryIds[id]={func:null,count:1};
+  }else{
+    Twister._activeQueryIds[id].count++;
+  }
+
+}
+
+Twister.bumpQueryId = function (id) {
+
+  Twister._activeQueryIds[id].count--;
+  if (Twister._activeQueryIds[id].count==0) {
+    if (Twister._activeQueryIds[id].func) { 
+      Twister._activeQueryIds[id].func(); 
+    }
+    delete Twister._activeQueryIds[id];
+  }
+  
+}
+
+Twister.onQueryComplete = function (id, cbfunc){
+
+  if(!Twister._activeQueryIds[id]){
+    Twister._activeQueryIds[id]={func:cbfunc,count:0};
+  }else{
+    Twister._activeQueryIds[id].func=cbfunc;
+  }
+  
+}
+
 module.exports = Twister;
