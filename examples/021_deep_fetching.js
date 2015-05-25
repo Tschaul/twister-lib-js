@@ -4,7 +4,9 @@
   * are asyncronous, so it is unpredictable in which order they finish. Therefore it is tricky 
   * to find out when all queries that were issued are complete. Using the "queryId" setting you
   * can mark multiple queries with a common id. With the onQueryComplete function you can
-  * register a handler that is triggered when the last query is completed.
+  * register a handler that is triggered when the last query is completed. In the following we 
+  * push all usernames to a single array and log it to console only once after all queries are
+  * finished.
   * 
   */
 
@@ -12,11 +14,11 @@ Twister = require("../src/Twister.js")
 
 var qid = Math.random();
 
-Twister.onQueryComplete(qid,function(){console.log("all queries are complete")});
+var allResults = [];
+
+Twister.onQueryComplete(qid,function(){console.log("all results: ",allResults)});
 
 Twister.getUser("tschaul").doFollowings(function(followings){
-    
-  console.log("the full names of tschauls followings are:");
   
   for(var i in followings) {
 
@@ -24,11 +26,11 @@ Twister.getUser("tschaul").doFollowings(function(followings){
 
       if (profile.getField("fullname")) {
       
-        console.log("fullname: "+profile.getField("fullname"));
+        allResults.push(profile.getField("fullname"));
       
       } else {
 
-        console.log("no fullname available for "+profile.getUsername());
+        allResults.push(profile.getUsername());
 
       }
 
