@@ -6,6 +6,8 @@ var TwisterFollowings = require('./TwisterFollowings.js');
 var TwisterPubKey = require('./TwisterPubKey.js');
 var TwisterStream = require('./TwisterStream.js');
 var TwisterMentions = require('./TwisterMentions.js');
+var TwisterResource = require('./TwisterResource.js');
+var inherits = require('inherits');
 
 /**
  * Describes a user in {@ Twister}. Allows for accessing all public onformation about this user.
@@ -28,6 +30,8 @@ function TwisterUser(name,scope) {
     this._mentions = new TwisterMentions(name,scope);
 
 }
+
+inherits(TwisterUser,TwisterResource);
 
 module.exports = TwisterUser;
 
@@ -106,7 +110,11 @@ TwisterUser.prototype._doPubKey = function (cbfunc, querySettings) {
 }
 
 TwisterUser.prototype.doProfile = function (cbfunc, querySettings) {
-    this._profile._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._profile,
+      this._profile._checkQueryAndDo,
+      cbfunc,
+      querySettings);
 };
 
 TwisterUser.prototype.getProfile = function () {
@@ -114,7 +122,11 @@ TwisterUser.prototype.getProfile = function () {
 };
 
 TwisterUser.prototype.doAvatar = function (cbfunc, querySettings) {
-    this._avatar._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._avatar,
+      this._avatar._checkQueryAndDo,
+      cbfunc, 
+      querySettings);
 };
 
 TwisterUser.prototype.getAvatar = function () {
@@ -122,7 +134,11 @@ TwisterUser.prototype.getAvatar = function () {
 };
 
 TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
-    this._followings._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._followings,
+      this._followings._checkQueryAndDo,
+      cbfunc, 
+      querySettings);
 };
 
 TwisterUser.prototype.getFollowings = function () {
@@ -130,11 +146,25 @@ TwisterUser.prototype.getFollowings = function () {
 };
 
 TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
-    this._stream._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._stream,
+      this._stream._checkQueryAndDo,
+      cbfunc, 
+      querySettings);
 };
 
 TwisterUser.prototype.doPost = function (id, cbfunc, querySettings) {
-    this._stream._doPost(id, cbfunc, querySettings);
+  
+  var thisStream = this._stream;
+  
+  return this._wrapPromise(
+    thisStream,
+    function(cb,qs){
+      thisStream._doPost(id, cb, qs);
+    },
+    cbfunc,
+    querySettings);
+  
 }
 
 
@@ -148,7 +178,11 @@ TwisterUser.prototype.getPost = function (id) {
 
 TwisterUser.prototype.doMentions = function (cbfunc, querySettings) {
 
-    this._mentions._checkQueryAndDo(cbfunc);
+    return this._wrapPromise(
+      this._mentions,
+      this._mentions._checkQueryAndDo,
+      cbfunc,
+      querySettings);
 
 }
 

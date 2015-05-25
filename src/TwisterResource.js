@@ -62,6 +62,36 @@ TwisterResource.prototype.inCache = function () {
     return (this._lastUpdate>0);
 }
 
+TwisterResource.prototype._wrapPromise = function (context,handler,cbfunc,querySettings) {
+  
+  if ( typeof cbfunc != "function" ) {
+    
+    querySettings = cbfunc;
+    
+    cbfunc = null;
+    
+  }
+  
+  if (!querySettings){ querySettings = {}; }
+
+  
+  if (querySettings["errorfunc"]) { 
+    var errorfuncFromQuerySettings = querySettings["errorfunc"];
+  } else {
+    var errorfuncFromQuerySettings = null;
+  }
+  delete  querySettings["errorfunc"];
+  
+  return new Promise ( function ( resolve, reject ) {
+    
+    querySettings["errorfunc"]=reject;
+    
+    handler.call(context,resolve,querySettings);
+    
+  } ).then(cbfunc,errorfuncFromQuerySettings);
+  
+}
+
 /**
  * Checks whether cached resource is outdated and invokes an update if needed. Calls cbfunc on the resource when done.
  * @function
@@ -70,6 +100,8 @@ TwisterResource.prototype.inCache = function () {
  */
 TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
     
+  
+  
     if (querySettings===undefined) {querySettings={};} 
     //else {console.log(querySettings)}
     
@@ -125,6 +157,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         
     }
 
+  
 } 
 
 /**

@@ -32632,6 +32632,36 @@ TwisterResource.prototype.inCache = function () {
     return (this._lastUpdate>0);
 }
 
+TwisterResource.prototype._wrapPromise = function (context,handler,cbfunc,querySettings) {
+  
+  if ( typeof cbfunc != "function" ) {
+    
+    querySettings = cbfunc;
+    
+    cbfunc = null;
+    
+  }
+  
+  if (!querySettings){ querySettings = {}; }
+
+  
+  if (querySettings["errorfunc"]) { 
+    var errorfuncFromQuerySettings = querySettings["errorfunc"];
+  } else {
+    var errorfuncFromQuerySettings = null;
+  }
+  delete  querySettings["errorfunc"];
+  
+  return new Promise ( function ( resolve, reject ) {
+    
+    querySettings["errorfunc"]=reject;
+    
+    handler.call(context,resolve,querySettings);
+    
+  } ).then(cbfunc,errorfuncFromQuerySettings);
+  
+}
+
 /**
  * Checks whether cached resource is outdated and invokes an update if needed. Calls cbfunc on the resource when done.
  * @function
@@ -32640,6 +32670,8 @@ TwisterResource.prototype.inCache = function () {
  */
 TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
     
+  
+  
     if (querySettings===undefined) {querySettings={};} 
     //else {console.log(querySettings)}
     
@@ -32695,6 +32727,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         
     }
 
+  
 } 
 
 /**
@@ -33474,6 +33507,8 @@ var TwisterFollowings = require('./TwisterFollowings.js');
 var TwisterPubKey = require('./TwisterPubKey.js');
 var TwisterStream = require('./TwisterStream.js');
 var TwisterMentions = require('./TwisterMentions.js');
+var TwisterResource = require('./TwisterResource.js');
+var inherits = require('inherits');
 
 /**
  * Describes a user in {@ Twister}. Allows for accessing all public onformation about this user.
@@ -33496,6 +33531,8 @@ function TwisterUser(name,scope) {
     this._mentions = new TwisterMentions(name,scope);
 
 }
+
+inherits(TwisterUser,TwisterResource);
 
 module.exports = TwisterUser;
 
@@ -33574,7 +33611,11 @@ TwisterUser.prototype._doPubKey = function (cbfunc, querySettings) {
 }
 
 TwisterUser.prototype.doProfile = function (cbfunc, querySettings) {
-    this._profile._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._profile,
+      this._profile._checkQueryAndDo,
+      cbfunc,
+      querySettings);
 };
 
 TwisterUser.prototype.getProfile = function () {
@@ -33582,7 +33623,11 @@ TwisterUser.prototype.getProfile = function () {
 };
 
 TwisterUser.prototype.doAvatar = function (cbfunc, querySettings) {
-    this._avatar._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._avatar,
+      this._avatar._checkQueryAndDo,
+      cbfunc, 
+      querySettings);
 };
 
 TwisterUser.prototype.getAvatar = function () {
@@ -33590,7 +33635,11 @@ TwisterUser.prototype.getAvatar = function () {
 };
 
 TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
-    this._followings._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._followings,
+      this._followings._checkQueryAndDo,
+      cbfunc, 
+      querySettings);
 };
 
 TwisterUser.prototype.getFollowings = function () {
@@ -33598,11 +33647,25 @@ TwisterUser.prototype.getFollowings = function () {
 };
 
 TwisterUser.prototype.doStatus = function (cbfunc, querySettings) {
-    this._stream._checkQueryAndDo(cbfunc, querySettings);
+    return this._wrapPromise(
+      this._stream,
+      this._stream._checkQueryAndDo,
+      cbfunc, 
+      querySettings);
 };
 
 TwisterUser.prototype.doPost = function (id, cbfunc, querySettings) {
-    this._stream._doPost(id, cbfunc, querySettings);
+  
+  var thisStream = this._stream;
+  
+  return this._wrapPromise(
+    thisStream,
+    function(cb,qs){
+      thisStream._doPost(id, cb, qs);
+    },
+    cbfunc,
+    querySettings);
+  
 }
 
 
@@ -33616,7 +33679,11 @@ TwisterUser.prototype.getPost = function (id) {
 
 TwisterUser.prototype.doMentions = function (cbfunc, querySettings) {
 
-    this._mentions._checkQueryAndDo(cbfunc);
+    return this._wrapPromise(
+      this._mentions,
+      this._mentions._checkQueryAndDo,
+      cbfunc,
+      querySettings);
 
 }
 
@@ -33629,7 +33696,7 @@ TwisterUser.prototype.doLatestPostsUntil = function (cbfunc, querySettings) {
     this._stream._doUntil(cbfunc, querySettings);
 
 }
-},{"./TwisterAvatar.js":143,"./TwisterFollowings.js":144,"./TwisterMentions.js":146,"./TwisterProfile.js":148,"./TwisterPubKey.js":150,"./TwisterStream.js":154}],156:[function(require,module,exports){
+},{"./TwisterAvatar.js":143,"./TwisterFollowings.js":144,"./TwisterMentions.js":146,"./TwisterProfile.js":148,"./TwisterPubKey.js":150,"./TwisterResource.js":152,"./TwisterStream.js":154,"inherits":52}],156:[function(require,module,exports){
 
 },{}],157:[function(require,module,exports){
 // http://wiki.commonjs.org/wiki/Unit_Testing/1.0
