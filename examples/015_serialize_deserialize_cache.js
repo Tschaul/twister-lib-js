@@ -1,7 +1,7 @@
 /* 
  * Another important feature of twister-lib-js is the cache. The cache is used extensively 
  * by twister-lib-js to minimize the number of JSON-RPC requests. The Twister object provides 
- * methods that can be used to save the cache (e.g. on hard disk or in the browsers local 
+ * methods that can be used to save the cache (e.g. on hard disk or in the browser's local 
  * storage) and to restore it. In this example we query a post and save the cache to a string. 
  * For that we have set the signature verification mode to instant because unverified posts 
  * are not restored.
