@@ -47,7 +47,7 @@ TwisterHashtag.prototype._queryAndDo = function (cbfunc, querySettings) {
     thisHashtag.dhtget([thisHashtag._name, "hashtag", "m"],
 
         function (result) {
-
+      
             var TwisterPost = require("./TwisterPost.js");
 
             for (i=0; i<result.length; i++) {

@@ -324,15 +324,15 @@ TwisterAccount.prototype.post = function (msg,cbfunc) {
         msg
     ],function(result){
       
-      var TwisterPost = require("../TwisterPost.js");      
-      var data = {};
-      data.n = thisAccount._name;
-      data.k = newid;
-      data.time = Math.round(Date.now()/1000);
-      data.msg = msg;
-      var newpost = new TwisterPost(data,"",Twister);
-      cbfunc(newpost);
-      Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+//      var TwisterPost = require("../TwisterPost.js");      
+//      var data = {};
+//      data.n = thisAccount._name;
+//      data.k = newid;
+//      data.time = Math.round(Date.now()/1000);
+//      data.msg = msg;
+//      var newpost = new TwisterPost(data,"",Twister);
+//      cbfunc(newpost);
+      Twister.getUser(thisAccount._name).doStatus(cbfunc,{outdatedLimit: 0});
     },function(error){
       thisAccount._handleError(error);
     });
@@ -360,16 +360,16 @@ TwisterAccount.prototype.reply = function (replyusername,replyid,msg,cbfunc) {
         replyid
     ],function(result){
       
-      var TwisterPost = require("../TwisterPost.js");      
-      var data = {};
-      data.n = thisAccount._name;
-      data.k = newid;
-      data.time = Math.round(Date.now()/1000);
-      data.msg = msg;
-      data.reply = { k: replyid, n: replyusername };
-      var newpost = new TwisterPost(data,"",Twister);
-      cbfunc(newpost);
-      Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+//      var TwisterPost = require("../TwisterPost.js");      
+//      var data = {};
+//      data.n = thisAccount._name;
+//      data.k = newid;
+//      data.time = Math.round(Date.now()/1000);
+//      data.msg = msg;
+//      data.reply = { k: replyid, n: replyusername };
+//      var newpost = new TwisterPost(data,"",Twister);
+//      cbfunc(newpost);
+      Twister.getUser(thisAccount._name).doStatus(cbfunc,{outdatedLimit: 0});
     },function(error){
       thisAccount._handleError(error);
     });
@@ -397,15 +397,15 @@ TwisterAccount.prototype.retwist = function (rtusername,rtid,cbfunc) {
           {  sig_userpost: post._signature, userpost: post._data }
       ],function(result){
 
-        var TwisterPost = require("../TwisterPost.js");      
-        var data = {};
-        data.n = thisAccount._name;
-        data.k = newid;
-        data.time = Math.round(Date.now()/1000);
-        data.rt = post._data;
-        var newpost = new TwisterPost(data,"",Twister);
-        cbfunc(newpost);
-        Twister.getUser(thisAccount._name).doStatus(function(){},{outdatedLimit: 0});
+//        var TwisterPost = require("../TwisterPost.js");      
+//        var data = {};
+//        data.n = thisAccount._name;
+//        data.k = newid;
+//        data.time = Math.round(Date.now()/1000);
+//        data.rt = post._data;
+//        var newpost = new TwisterPost(data,"",Twister);
+//        cbfunc(newpost);
+        Twister.getUser(thisAccount._name).doStatus(cbfunc,{outdatedLimit: 0});
         
       },function(error){
         thisAccount._handleError(error);
