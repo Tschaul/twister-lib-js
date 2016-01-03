@@ -147,10 +147,12 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
         try {
             signature = new Buffer(signature, 'hex');
           try {
-            var retVal = Bitcoin.Message.verify(thisPubKey.getAddress(), signature, message, twister_network);
+            
+            var retVal = Bitcoin.message.verify(thisPubKey.getAddress(), signature, message, twister_network);
           } catch(e) {
             var retVal = false;	
             thisResource._log("verification went sideways");
+            console.log(e);
           }
         } catch(e) {
           var retVal = false;	

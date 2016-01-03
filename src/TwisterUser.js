@@ -134,11 +134,13 @@ TwisterUser.prototype.getAvatar = function () {
 };
 
 TwisterUser.prototype.doFollowings = function (cbfunc, querySettings) {
-    return this._wrapPromise(
+  
+    this._followings._checkQueryAndDo(cbfunc,querySettings);
+    /*return this._wrapPromise(
       this._followings,
       this._followings._checkQueryAndDo,
       cbfunc, 
-      querySettings);
+      querySettings);*/
 };
 
 TwisterUser.prototype.getFollowings = function () {
