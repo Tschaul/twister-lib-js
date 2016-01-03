@@ -7,10 +7,10 @@ var Crypto = require('crypto');
 var buffer = require('buffer').Buffer;
 var bencode = require('bencode');
 
-var twister_network = {
-    magicPrefix: '\x18twister Signed Message:\n',
-    pubKeyHash: 0x00,
-}
+
+var twister_network = Bitcoin.networks.bitcoin;
+
+twister_network.messagePrefix= '\x18twister Signed Message:\n';
 
 /**
  * Describes the public key of a user.
@@ -66,14 +66,14 @@ TwisterPubKey.prototype._queryAndDo = function (cbfunc) {
     var thisResource = this;
             
     thisResource.RPC("dumppubkey", [ thisResource._name ], function(res) {
-
+      
         if(res.length) {
       
           thisResource._lastUpdate = Date.now()/1000;
 
           thisResource._data = res;
-
-          thisResource._btcKey = Bitcoin.ECPubKey.fromHex(res);
+          
+          thisResource._btcKey = Bitcoin.ECPair.fromPublicKeyBuffer(new Buffer(res,"hex"),twister_network);
 
           if (cbfunc) {
 

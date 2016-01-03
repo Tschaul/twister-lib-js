@@ -291,11 +291,6 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
                   
                   var res = JSON.parse(body);
                   
-                  if (res.error) {
-                    thisResource._handleError(res.error);
-                  } else {
-                    resultFunc(res.result);
-                  }
                   
                 } catch (err) {
 
@@ -304,8 +299,17 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
                     code: 32092
                   })
 
+                  var res = null;
                 }
 
+                if(res){
+                  if (res.error) {
+                    thisResource._handleError(res.error);
+                  } else {
+                    resultFunc(res.result);
+                  }
+                }
+                                
               } 
                 
             }

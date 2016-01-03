@@ -197,6 +197,27 @@ Twister.loadServerAccounts = function (cbfunc) {
 
 }
 
+
+
+/** @function
+ * @name loadAccounts 
+ * @description loads available account into the wallet. 
+ */
+Twister.importClientSideAccount = function (name,key,cbfunc) {
+	
+  var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+
+  Twister._wallet[name] = new TwisterAccount(name,Twister);
+
+  Twister._wallet[name]._privkey.setKey(key)
+  Twister._wallet[name]._privkey.verifyKey(function(){
+
+    cbfunc(Twister._wallet[name])
+    
+  })
+  
+}
+
 /** @function
  * @name serializeCache 
  * @description Flattens the complete cache into a nested object which can be used to reload the cache later.
