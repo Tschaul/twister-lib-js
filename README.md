@@ -84,6 +84,8 @@ twister-lib-js passes through all JSON-RPC errors. Internal errors are thrown in
 * 32060: Post signature could not be verified.
 * 32061: Public key not available on server.
 * 32062: Signature of retwisted post could not be verified.
+* 32063: Post could not be decrypted.
+* 32064: Private key is in conflict with public key.
 * 32080: Unsupported wallet type.
 * 32081: No wallet users found on the server.
 * 32082: Torrent inactive. Activate torrent first!
