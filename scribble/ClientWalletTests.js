@@ -11,18 +11,18 @@ Twister.importClientSideAccount("pampalulu","L12kz6tabDN6VmPes1rfEpiznztPF6vgkHp
       
       console.log(Twister.getAccount("pampalulu")._torrents["pampalulu"]._active)
       
-      Twister.getAccount("pampalulu").updateProfileFields({location:"fance new location"},function(){
+      /*Twister.getAccount("pampalulu").updateProfileFields({location:"fance new location"},function(){
         console.log("yay");
-      })
+      })*/
       
-      /*Twister.getAccount("pampalulu").post(
-        "test post from node using twister-lib-js",function(post){
+      Twister.getAccount("pampalulu").post(
+        "test post from node using twister-lib-js",function(){
 
-          Twister.getUser("pampalulu").doStatus(function(){
+          Twister.getUser("pampalulu").doStatus(function(post){
             console.log(post.getContent())
           });
 
-      });*/
+      });
       
       
       /*var post = {
