@@ -1,7 +1,7 @@
 
 Twister = require("../src/Twister.js");
 
-Twister.setup({logfunc: function(l){console.log(l)}})
+//Twister.setup({logfunc: function(l){console.log(l)}})
 
 Twister.importClientSideAccount("pampalulu","L12kz6tabDN6VmPes1rfEpiznztPF6vgkHp8UZVBgZadxzebHhAp",function(){
 	
@@ -16,11 +16,11 @@ Twister.importClientSideAccount("pampalulu","L12kz6tabDN6VmPes1rfEpiznztPF6vgkHp
       })*/
       
       Twister.getAccount("pampalulu").post(
-        "test post from node using twister-lib-js",function(){
+        "another test with a mention @tschaul and hashtag #blub",function(post){
 
-          Twister.getUser("pampalulu").doStatus(function(post){
+          //Twister.getUser("pampalulu").doStatus(function(post){
             console.log(post.getContent())
-          });
+          //});
 
       });
       

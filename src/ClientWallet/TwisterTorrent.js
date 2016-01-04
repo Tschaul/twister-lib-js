@@ -141,7 +141,7 @@ TwisterTorrent.prototype._queryAndDo = function (cbfunc) {
       }
       
     }
-
+    
     thisTorrent.RPC("getlasthave", [ "guest", torrentlist ], function(res) {
 
       if (thisTorrent._name in res) { 
@@ -353,6 +353,8 @@ TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
 
         }
 
+        thisTorrent._log("comparing latest id for ",username,resTorrent._latestId,Twister.getUser(username)._stream._latestId);
+        
         if (resTorrent._latestId==Twister.getUser(username)._stream._latestId) {
 
           Twister.getUser(username)._stream._lastUpdate=Date.now()/1000;
@@ -360,6 +362,9 @@ TwisterTorrent.prototype._checkForUpdatesUsingGetLastHave = function (cbfunc) {
 
         } else {
 
+          
+          thisTorrent._log("found outdated user ",username);
+          
           outdatedUsers.push({username:username});
 
         }

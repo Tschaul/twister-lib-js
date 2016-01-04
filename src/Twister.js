@@ -271,7 +271,10 @@ Twister.deserializeCache = function (flatData) {
         
         if (Twister._walletType=="server") {
             var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
-        } else {
+        } 
+        if (Twister._walletType=="client") {
+            var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+        }else {
             Twister._handleError({
               message: "Unsupported wallet type.",
               code: 32080
@@ -335,6 +338,8 @@ Twister._activeQueryIds = {};
 
 Twister.raiseQueryId = function (id) {
 
+  console.log("raise id ",id)
+  
   if (id) {
     if(!Twister._activeQueryIds[id]){
       Twister._activeQueryIds[id]={func:null,count:1};
@@ -347,6 +352,8 @@ Twister.raiseQueryId = function (id) {
 
 Twister.bumpQueryId = function (id) {
     
+  console.log("bump id ",id)
+  
   if (id) {
     Twister._activeQueryIds[id].count--;
     if (Twister._activeQueryIds[id].count==0) {
@@ -360,6 +367,8 @@ Twister.bumpQueryId = function (id) {
 }
 
 Twister.onQueryComplete = function (id, cbfunc){
+  
+  console.log("complete id ",id)
   
   if(!Twister._activeQueryIds[id]){
     Twister._activeQueryIds[id]={func:cbfunc,count:0};

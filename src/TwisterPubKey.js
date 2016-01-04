@@ -41,7 +41,7 @@ TwisterPubKey.prototype.inflate = function (flatData) {
     
     if (this._data) {
     
-        this._btcKey = Bitcoin.ECPubKey.fromHex(this._data);
+        this._btcKey = Bitcoin.ECPair.fromPublicKeyBuffer(new Buffer(this._data,"hex"),twister_network);
     
     }
 

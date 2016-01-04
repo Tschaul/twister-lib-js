@@ -85,6 +85,8 @@ TwisterAccount.prototype.inflate = function (flatData) {
         this._torrents[flatData.torrents[i].name]=newuser;
 
     }
+  
+    this._privkey.inflate(flatData.privkey);
 
 }
 
@@ -327,7 +329,7 @@ TwisterAccount.prototype.updateAvatar = function (newdata,cbfunc) {
 TwisterAccount.prototype.post = function (msg,cbfunc) {
   
   var post = {msg:msg};
-  
+    
   this._signAndPublish(post,cbfunc);
 
 }
@@ -335,36 +337,37 @@ TwisterAccount.prototype.post = function (msg,cbfunc) {
 TwisterAccount.prototype.reply = function (replyusername,replyid,msg,cbfunc) {
   
   var thisAccount = this;
+  
+  var post = {
+    msg:msg,
+    reply:{
+      k: replyid,
+      n: replyusername      
+    }
+  };
+  
+  this._signAndPublish(post,function(newpost){
     
-  var Twister = this._scope;
-
-  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
-
-    var newid = thisTorrent._latestId+1;
-    //thisTorrent._latestId = newid;
-
-    thisAccount.RPC("newpostmsg",[
-        thisAccount._name,
-        newid,
-        msg,
-        replyusername,
-        replyid
-    ],function(result){
-      
-//      var TwisterPost = require("../TwisterPost.js");      
-//      var data = {};
-//      data.n = thisAccount._name;
-//      data.k = newid;
-//      data.time = Math.round(Date.now()/1000);
-//      data.msg = msg;
-//      data.reply = { k: replyid, n: replyusername };
-//      var newpost = new TwisterPost(data,"",Twister);
-//      cbfunc(newpost);
-      Twister.getUser(thisAccount._name).doStatus(cbfunc,{outdatedLimit: 0});
-    },function(error){
-      thisAccount._handleError(error);
-    });
-
+    var v = {
+      rt: newpost._data,
+      sig_rt: newpost._signature
+    }
+    
+    thisAccount._dhtput(
+      replyusername,
+      "replies"+replyid,
+      "m",
+      v,
+      0,
+      function(result){
+        Twister.getUser(replyusername)._stream._posts[replyid]._replies._data[newpost.getUsername()+":post"+newpost.getId()]=true; 
+        cbfunc(newpost);
+      },
+      function(error){
+        thisAccount._handleError(error);
+      }
+    );
+    
   });
 
 }
@@ -375,36 +378,40 @@ TwisterAccount.prototype.retwist = function (rtusername,rtid,cbfunc) {
     
   var Twister = this._scope;
 
-  this.getTorrent(this._name)._checkQueryAndDo(function(thisTorrent){
-
-    var newid = thisTorrent._latestId+1;
-    //thisTorrent._latestId = newid;
+  Twister.getUser(rtusername).doPost(rtid,function(post){
     
-    Twister.getUser(rtusername).doPost(rtid,function(post){
-
-      thisAccount.RPC("newrtmsg",[
-          thisAccount._name,
-          newid,
-          {  sig_userpost: post._signature, userpost: post._data }
-      ],function(result){
-
-//        var TwisterPost = require("../TwisterPost.js");      
-//        var data = {};
-//        data.n = thisAccount._name;
-//        data.k = newid;
-//        data.time = Math.round(Date.now()/1000);
-//        data.rt = post._data;
-//        var newpost = new TwisterPost(data,"",Twister);
-//        cbfunc(newpost);
-        Twister.getUser(thisAccount._name).doStatus(cbfunc,{outdatedLimit: 0});
-        
-      },function(error){
-        thisAccount._handleError(error);
-      });
+    var post = {
+      rt: post._data,
+      sig_rt: post._signature
+    }
+    
+    
+    thisAccount._signAndPublish(post,function(newpost){
+    
+      var v = {
+        rt: newpost._data,
+        sig_rt: newpost._signature
+      }
       
-    });
+      thisAccount._dhtput(
+        rtusername,
+        "rts"+rtid,
+        "m",
+        v,
+        0,
+        function(result){
+          Twister.getUser(rtusername)._stream._posts[rtid]._retwists._data[newpost.getUsername()+":post"+newpost.getId()]=true;  
+          cbfunc(newpost);
+        },
+        function(error){
+          thisAccount._handleError(error);
+        }
+      );
 
+    });
+    
   });
+
 
 }
 
@@ -454,7 +461,7 @@ TwisterAccount.prototype._signAndPublish = function(post_ori,cbfunc){
   var post = JSON.parse(JSON.stringify(post_ori));
   
   if ("sig_rt" in post) {
-      post.sig_rt = new Buffer(message.sig_rt, 'hex');
+      post.sig_rt = new Buffer(post.sig_rt, 'hex');
   }
   
   var thisAccount = this;
@@ -467,26 +474,39 @@ TwisterAccount.prototype._signAndPublish = function(post_ori,cbfunc){
   
     thisAccount.RPC("getinfo",[],function(info){
 
-      Twister.getUser(thisAccount._name).doStatus(function(status){
+      Twister.getUser(thisAccount._name).doStatus(function(status){  
         
-        post.height = info.blocks;
+        //console.log("new post msg after",status)
+
+        
+        post.height = info.blocks-1;
         post.n = thisAccount._name;
         post.k = newid;
         post.lastk = status.getId();
         post.time = Math.round(Date.now()/1000);
         
+        //console.log("new post will be",post)
+        
         thisAccount._privkey.sign(post,function(sig){
           
           var v = {
-            sig_userpost:sig,
+            sig_userpost: sig,
             userpost: post
           };
+          
+          //console.log("publishing new post ",v);
           
           var message = bencode.encode(v);
           
           thisAccount.RPC("newpostraw",[thisAccount._name,newid,message.toString("hex")],function(){
             
-            thisAccount._publishPostOnDht(v,cbfunc);
+            thisAccount._publishPostOnDht(v,function(){
+              
+              console.log("going to verify ",v)
+              
+              Twister.getUser(thisAccount._name)._stream._verifyAndCachePost(v,cbfunc);
+              
+            });
                         
           },function(error){
             thisAccount._handleError(error);
@@ -494,7 +514,7 @@ TwisterAccount.prototype._signAndPublish = function(post_ori,cbfunc){
           
         });
         
-      },{outdatedLimit: 0});
+      });
 
     },function(error){
       thisAccount._handleError(error);
@@ -513,7 +533,7 @@ TwisterAccount.prototype._dhtput = function(username,resource,sorm,value,seq,cbf
   thisAccount.RPC("getinfo",[],function(info){
     
     var p = {
-        height: info.blocks,
+        height: info.blocks-1,
         v:value,
         seq: seq,
         target:{
@@ -524,6 +544,8 @@ TwisterAccount.prototype._dhtput = function(username,resource,sorm,value,seq,cbf
         time: Math.round(Date.now()/1000),
         v: value
       };
+    
+    console.log("dhtputraw",p)
     
     thisAccount._privkey.sign(p,function(sig){
       
@@ -536,7 +558,7 @@ TwisterAccount.prototype._dhtput = function(username,resource,sorm,value,seq,cbf
         var message = bencode.encode(dhtentry);
         
         thisAccount.RPC("dhtputraw",[message.toString("hex")],function(){
-          
+          cbfunc();
         },function(error){
           thisAccount._handleError(error);
         });
@@ -555,8 +577,12 @@ TwisterAccount.prototype._publishPostOnDht = function(v,cbfunc){
   
   var thisAccount = this;
   
-  var querId = v.sig_userpost.toString();
+  var querId = v.sig_userpost.toString("hex");
   
+  Twister.onQueryComplete(querId,function(){
+    cbfunc(v);
+  });
+
   Twister.raiseQueryId(querId);
         
   thisAccount._dhtput(
@@ -589,16 +615,14 @@ TwisterAccount.prototype._publishPostOnDht = function(v,cbfunc){
     }
   );
   
-  if(v.msg){
+  if(v.userpost && v.userpost.msg){
     
-    var parsedContent = TwisterContentParser.parseContent(v.msg);
-    
-    for(var k in parsedContent){
+    var parsedContent = TwisterContentParser.parseContent(v.userpost.msg);
+            
+    parsedContent.map(function(item){
       
-      var item = parsedContent[k];
-      
-      if(item.type="hashtag"){
-        
+      if(item.type=="hashtag"){
+                
         Twister.raiseQueryId(querId);
         
         thisAccount._dhtput(
@@ -608,6 +632,8 @@ TwisterAccount.prototype._publishPostOnDht = function(v,cbfunc){
           v,
           0,
           function(result){
+            //console.log(Twister.getHashtag(item.raw))
+            Twister.getHashtag(item.raw)._data[v.userpost.n+":post"+v.userpost.k]=true;
             Twister.bumpQueryId(querId);
           },
           function(error){
@@ -618,10 +644,10 @@ TwisterAccount.prototype._publishPostOnDht = function(v,cbfunc){
       }
       
       
-      if(item.type="mention"){
+      if(item.type=="mention"){
         
         Twister.raiseQueryId(querId);
-        
+                
         thisAccount._dhtput(
           item.raw,
           "mention",
@@ -629,6 +655,7 @@ TwisterAccount.prototype._publishPostOnDht = function(v,cbfunc){
           v,
           0,
           function(result){
+            Twister.getUser(item.raw)._mentions._data[v.userpost.n+":post"+v.userpost.k]=true;
             Twister.bumpQueryId(querId);
           },
           function(error){
@@ -638,9 +665,8 @@ TwisterAccount.prototype._publishPostOnDht = function(v,cbfunc){
         
       }
       
-    }
-    
-    Twister.onQueryComplete(querId,cbfunc);
+    });
+        
     
   }
   

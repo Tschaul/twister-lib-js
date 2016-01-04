@@ -81,7 +81,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
         
         thisResource._activeQuerySettings = JSON.parse(JSON.stringify(querySettings));
         thisResource._updateInProgress = true;
-        Twister.raiseQueryId(thisResource._activeQuerySettings["queryId"]);
+        if(thisResource._activeQuerySettings["queryId"]) Twister.raiseQueryId(thisResource._activeQuerySettings["queryId"]);
 
         var outdatedTimestamp = 0;
       
@@ -93,7 +93,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
             
             thisResource._log("resource present in cache");
           
-            Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
+            if(thisResource._activeQuerySettings["queryId"]) Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
             thisResource._activeQuerySettings = {};
             thisResource._updateInProgress = false;
 
@@ -105,7 +105,7 @@ TwisterResource.prototype._checkQueryAndDo = function (cbfunc,querySettings) {
                 
                 thisResource._do(cbfunc);
                 
-                Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
+                if(thisResource._activeQuerySettings["queryId"]) Twister.bumpQueryId(thisResource._activeQuerySettings["queryId"]);
                 thisResource._activeQuerySettings = {};
                 thisResource._updateInProgress = false;
             
@@ -181,7 +181,7 @@ TwisterResource.prototype._handleError = function (error) {
     
     this._updateInProgress = false;
     this.getQuerySetting("errorfunc").call(this,error);
-    Twister.bumpQueryId(this._activeQuerySettings["queryId"]);
+    if(this._activeQuerySettings["queryId"])  Twister.bumpQueryId(this._activeQuerySettings["queryId"]);
     this._activeQuerySettings={};
   
 }

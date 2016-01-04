@@ -41,7 +41,7 @@ TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
   
   var thisStream = Twister.getUser(this._name)._stream;
   
-  if (thisStream._activeTorrentUser && thisStream._activeTorrentUser==this._name) {
+  if (thisStream._activeTorrentUser && thisStream._activeTorrentUser==this._name && Twister._wallet[this._name]._wallettype=="server") {
     
     thisResource._log("using getfollowing rpc method")
     

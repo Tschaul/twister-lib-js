@@ -45,7 +45,9 @@ module.exports = TwisterPrivKey;
 TwisterPrivKey.prototype.inflate = function (flatData) {
 
     TwisterResource.prototype.inflate.call(this,flatData);
-    
+
+    console.log("inflating privkey",flatData);
+  
     if (this._data) {
     
         this._btcKey = Bitcoin.ECPair.fromWIF(this._data,twister_network);
@@ -141,17 +143,17 @@ TwisterPrivKey.prototype.sign = function (message_ori, cbfunc) {
   var message = JSON.parse(JSON.stringify(message_ori));
 
   if ("v" in message && (typeof message.v)=="object"){ 
-    if("sig_userpost" in message.v) {
+    if("sig_userpost" in message.v && !Buffer.isBuffer(message.v.sig_userpost)) {
       message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
     }
     if ("userpost" in message.v) { 
-      if ("sig_rt" in message.v.userpost) {
+      if ("sig_rt" in message.v.userpost && !Buffer.isBuffer(message.v.userpost.sig_rt)) {
         message.v.userpost.sig_rt = new Buffer(message.v.userpost.sig_rt, 'hex');
       }
     }
   }
 
-  if ("sig_rt" in message) {
+  if ("sig_rt" in message && !Buffer.isBuffer(message.sig_rt)) {
     message.sig_rt = new Buffer(message.sig_rt, 'hex');
   }
 
@@ -167,12 +169,14 @@ TwisterPrivKey.prototype.sign = function (message_ori, cbfunc) {
 
     try {
       var retVal = Bitcoin.message.sign(keyPair,message ,twister_network);
+      cbfunc(retVal)
     } catch(e) {
-      var retVal = false;	
-      thisResource._log("post signing went sideways");
+      //console.log(e)
+      thisResource._handleError({
+        code: 123,
+        message:"post signing went sideways"
+      });
     }
-
-    cbfunc(retVal)
 
   },0);
 
