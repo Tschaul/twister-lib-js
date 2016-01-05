@@ -150,44 +150,126 @@ TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
 TwisterAccount.prototype.unfollow = function (username,cbfunc) {
   
-  /*var thisAccount = this;
+  var thisAccount = this;
     
   var Twister = this._scope;
 
-  thisAccount.RPC("unfollow",[
+  Twister.getUser(this._name).doFollowings(function(fols){
     
-      thisAccount._name,
-      [username]
+    var newfollowings = fols.map(function(fol){
+      return fol.getUsername();
+    }).filter(function(name){
+      return name!=username;
+    })
     
-  ],function(result){
-
-    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    var oldRevisionNumers = Twister.getUser(thisAccount._name)._followings._revisionNumber;
     
-  },function(error){
-      TwisterAccount._handleError(error);
-  });*/
+    thisAccount.updateFollowing(newfollowings,oldRevisionNumers,cbfunc)
+    
+  },{outdatedLimit: 0})
 
 }
 
 TwisterAccount.prototype.follow = function (username,cbfunc) {
   
-  /*var thisAccount = this;
+  var thisAccount = this;
     
   var Twister = this._scope;
 
-  thisAccount.RPC("follow",[
+  Twister.getUser(this._name).doFollowings(function(fols){
     
-      thisAccount._name,
-      [username]
+    var newfollowings = fols.map(function(fol){
+      return fol.getUsername();
+    });
+        
+    if(newfollowings.indexOf(username)<0){
+      newfollowings.push(username);
+    }
     
-  ],function(result){
+    //console.log(newfollowings);
     
-    Twister.getUser(thisAccount._name).doFollowings(cbfunc,{outdatedLimit: 0});
+    var oldRevisionNumers = Twister.getUser(thisAccount._name)._followings._revisionNumber;
     
-  },function(error){
-    thisAccount._handleError(error);
-  });*/
+    console.log("oldrev:",oldRevisionNumers)
+    
+    thisAccount.updateFollowing(newfollowings,oldRevisionNumers,cbfunc)
+    
+  },{outdatedLimit: 0})
 
+}
+
+TwisterAccount.prototype.updateFollowing = function (newfollowings,oldRevsionNumbers,cbfunc) {
+  
+  var newfollowings = JSON.parse(JSON.stringify(newfollowings));
+  var newfollowings_ori = JSON.parse(JSON.stringify(newfollowings));
+  var oldRevsionNumbers = JSON.parse(JSON.stringify(oldRevsionNumbers));
+  
+  var thisAccount = this;
+  
+  var Twister = this._scope;
+  
+  var currentCounter = 1;
+
+  var newRevNumbers = {};
+  
+  var putTilEmpty = function (cbfunc) {
+
+      thisAccount.dhtget([thisAccount._name, "following"+currentCounter, "s"],
+
+          function (result) {
+
+              if ((result[0] && result[0].p.v[0])||newfollowings.length) {
+
+                var charcount = 0;
+                
+                var folsforthisresource = [];
+                
+                while(newfollowings.length && charcount<4000){
+                  
+                  var nextfol = newfollowings.shift();
+                  
+                  charcount += nextfol.length + 3;
+                  
+                  folsforthisresource.push(nextfol);
+                  
+                }
+                
+                var seq = oldRevsionNumbers[currentCounter] ? oldRevsionNumbers[currentCounter]+1 : 1 ;
+                
+                thisAccount._dhtput(
+                  thisAccount._name,
+                  "following"+currentCounter,
+                  "s",
+                  folsforthisresource,
+                  seq,
+                  function(result){
+
+                    newRevNumbers[currentCounter]=seq;
+                    currentCounter++;
+                    putTilEmpty(cbfunc)
+
+                },function(error){
+                  thisAccount._handleError(error);
+                });
+                  
+              } else {
+
+                  Twister.getUser(thisAccount._name)._followings._data = newfollowings_ori;
+                  Twister.getUser(thisAccount._name)._followings._revisionNumber = newRevNumbers;
+                  Twister.getUser(thisAccount._name)._followings._do(cbfunc);
+
+              }
+
+          }
+
+
+      ); 
+
+  };  
+
+  putTilEmpty(cbfunc);
+  
+  
 }
 
 TwisterAccount.prototype.updateProfile = function (newdata,cbfunc) {

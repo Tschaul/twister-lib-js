@@ -15,15 +15,20 @@ Twister.importClientSideAccount("pampalulu","L12kz6tabDN6VmPes1rfEpiznztPF6vgkHp
         console.log("yay");
       })*/
       
-      Twister.getAccount("pampalulu").post(
+      /*Twister.getAccount("pampalulu").post(
         "another test with a mention @tschaul and hashtag #blub",function(post){
 
           //Twister.getUser("pampalulu").doStatus(function(post){
             console.log(post.getContent())
           //});
 
-      });
+      });*/
       
+      Twister.getAccount("pampalulu").unfollow(
+        "rysiek",function(fols){
+            console.log(fols)
+        }
+      );
       
       /*var post = {
         msg: "test"

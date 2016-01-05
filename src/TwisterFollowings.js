@@ -10,6 +10,7 @@ var TwisterFollowings = function (name,scope) {
     
     TwisterResource.call(this,name,scope);
     this._type = "followings";
+    this._revisionNumber = {};
     
 }
 
@@ -81,6 +82,8 @@ TwisterFollowings.prototype._queryAndDo = function (cbfunc) {
 
                     }
 
+                    thisResource._revisionNumber[currentCounter]=result[0].p.seq;
+                  
                     currentCounter++;
                     requestTilEmpty(cbfunc)
 
