@@ -78,3 +78,13 @@ TwisterAvatar.prototype.getUrl = function () {
     return this._data;
     
 }
+
+/** @function
+ * @name getUsername 
+ * @description return the username of the owner of the avatar
+ */
+TwisterAvatar.prototype.getUsername = function () {
+
+    return this._name;
+    
+}

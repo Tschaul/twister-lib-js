@@ -311,15 +311,14 @@ TwisterAccount.prototype.updateProfile = function (newdata,cbfunc) {
         profile._revisionNumber+1,
         function(result){
 
-        var TwisterProfile = require("../TwisterProfile.js");
+          var newprofile = Twister.getUser(thisAccount._name)._profile;
+          newprofile._data = newdata;
+          if(cbfunc) cbfunc(newprofile);
 
-        var newprofile = new TwisterProfile(thisAccount._name,Twister);
-        newprofile._data = newdata;
-        if(cbfunc) cbfunc(newprofile);
-
-      },function(error){
-        thisAccount._handleError(error);
-      });
+        },function(error){
+          thisAccount._handleError(error);
+        }
+      );
 	
 	},{errorfunc:function(error){
     
@@ -331,6 +330,8 @@ TwisterAccount.prototype.updateProfile = function (newdata,cbfunc) {
         
         thisAccount.updateProfileFields(newdata,cbfunc);
         
+      }else{
+        thisAccount._handleError(error);
       }
       
     }})
@@ -355,22 +356,21 @@ TwisterAccount.prototype.updateProfileFields = function (newdata,cbfunc) {
       }
       
       thisAccount._dhtput(
-          thisAccount._name,
-          "profile",
-          "s",
-          olddata,
-          profile._revisionNumber+1,
-          function(result){
-          
-          var TwisterProfile = require("../TwisterProfile.js");
-          
-          var newprofile = new TwisterProfile(thisAccount._name,Twister);
+        thisAccount._name,
+        "profile",
+        "s",
+        olddata,
+        profile._revisionNumber+1,
+        function(result){
+
+          var newprofile = Twister.getUser(thisAccount._name)._profile;
           newprofile._data = olddata;
           if(cbfunc) cbfunc(newprofile);
-        
+
         },function(error){
           thisAccount._handleError(error);
-      });
+        }
+      );
 	
     },{errorfunc:function(error){
     
@@ -382,6 +382,8 @@ TwisterAccount.prototype.updateProfileFields = function (newdata,cbfunc) {
         
         thisAccount.updateProfileFields(newdata,cbfunc);
         
+      }else{
+        thisAccount._handleError(error);
       }
       
     }})
@@ -404,12 +406,10 @@ TwisterAccount.prototype.updateAvatar = function (newdata,cbfunc) {
           avatar._revisionNumber+1,
           function(result){
           
-          var TwisterAvatar = require("../TwisterAvatar.js");
-          
-          var newprofile = new TwisterAvatar(thisAccount._name,Twister);
-          newprofile._data = newdata;
-          if(cbfunc) cbfunc(newprofile);
-		
+          var newavatar = Twister.getUser(thisAccount._name)._avatar;
+          newavatar._data = newdata;
+          if(cbfunc) cbfunc(newavatar);
+            
 		},function(error){
           thisAccount._handleError(error);
 		});
