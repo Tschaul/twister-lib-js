@@ -212,7 +212,7 @@ Twister.importClientSideAccount = function (name,key,cbfunc) {
   Twister._wallet[name]._privkey.setKey(key)
   Twister._wallet[name]._privkey.verifyKey(function(){
 
-    cbfunc(Twister._wallet[name])
+    if(cbfunc) cbfunc(Twister._wallet[name])
     
   })
   
