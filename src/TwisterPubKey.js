@@ -106,6 +106,10 @@ TwisterPubKey.prototype.getKey = function () {
 
 TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, cbfunc) {
 
+  var verifySignatures = (this.getQuerySetting("signatureVerification")!="none");
+  
+  if(verifySignatures){
+  
     var thisResource = this;
   
     var signature = JSON.parse(JSON.stringify(signature_ori));
@@ -170,6 +174,8 @@ TwisterPubKey.prototype.verifySignature = function (message_ori, signature_ori, 
 
     },timeout);
 
-
+  }else{
+    cbfunc(true);
+  }
 
 }

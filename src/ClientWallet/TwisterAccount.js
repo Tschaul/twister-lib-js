@@ -453,8 +453,8 @@ TwisterAccount.prototype.reply = function (replyusername,replyid,msg,cbfunc) {
   this._signAndPublish(post,function(newpost){
     
     var v = {
-      rt: newpost._data,
-      sig_rt: newpost._signature
+      sig_userpost: newpost._signature,
+      userpost: newpost._data
     }
     
     thisAccount._dhtput(
@@ -645,27 +645,31 @@ TwisterAccount.prototype._dhtput = function(username,resource,sorm,value,seq,cbf
   thisAccount.RPC("getinfo",[],function(info){
     
     var p = {
-        height: info.blocks-1,
-        v:value,
-        seq: seq,
-        target:{
-          "n" : username,
-          "r" : resource,
-          "t" : sorm
-        },
-        time: Math.round(Date.now()/1000),
-        v: value
-      };
+      height: info.blocks-1,
+      target:{
+        "n" : username,
+        "r" : resource,
+        "t" : sorm
+      },
+      time: Math.round(Date.now()/1000),
+      v: value
+    };
     
-    console.log("dhtputraw",p)
+    if(sorm=="s"){
+      p.seq=seq;
+    }
     
-    thisAccount._privkey.sign(p,function(sig){
+    console.log("dhtputraw",username,resource,sorm,p)
+    
+    thisAccount._privkey.sign(p,function(sig,pWithBuffers){
       
         var dhtentry = {
-          p: p,
+          p: pWithBuffers,
           sig_user:thisAccount._name,
           sig_p: sig
         }
+                
+        //console.log("p",dhtentry)
         
         var message = bencode.encode(dhtentry);
         
@@ -727,10 +731,14 @@ TwisterAccount.prototype._publishPostOnDht = function(v,cbfunc){
     }
   );
   
+  console.log(v)
+  
   if(v.userpost && v.userpost.msg){
     
     var parsedContent = TwisterContentParser.parseContent(v.userpost.msg);
-            
+           
+    console.log("parsed content",parsedContent)
+    
     parsedContent.map(function(item){
       
       if(item.type=="hashtag"){

@@ -221,6 +221,14 @@ TwisterPost.prototype.isRetwist = function () {
     return ("rt" in this._data);
 }
 
+/** @function
+ * @name isRetwist 
+ * @description returns true if the postis an rewtist.
+ */
+TwisterPost.prototype.isRetwistWithComment = function () {
+    return ("rt" in this._data && "msg" in this._data);
+}
+
 
 /** @function
  * @name getRetwistedId 

@@ -142,6 +142,20 @@ TwisterPrivKey.prototype.sign = function (message_ori, cbfunc) {
 
   var message = JSON.parse(JSON.stringify(message_ori));
 
+  if ("p" in message && (typeof message.p)=="object"){ 
+    if ("v" in message.p && (typeof message.p.v)=="object"){ 
+      if("sig_userpost" in message.p.v && !Buffer.isBuffer(message.p.v.sig_userpost)) {
+        message.p.v.sig_userpost = new Buffer(message.p.v.sig_userpost, 'hex');
+      }
+      if ("userpost" in message.p.v) { 
+        if ("sig_rt" in message.p.v.userpost && !Buffer.isBuffer(message.p.v.userpost.sig_rt)) {
+          message.p.v.userpost.sig_rt = new Buffer(message.p.v.userpost.sig_rt, 'hex');
+        }
+      }
+    }
+  }
+  
+  
   if ("v" in message && (typeof message.v)=="object"){ 
     if("sig_userpost" in message.v && !Buffer.isBuffer(message.v.sig_userpost)) {
       message.v.sig_userpost = new Buffer(message.v.sig_userpost, 'hex');
@@ -155,6 +169,9 @@ TwisterPrivKey.prototype.sign = function (message_ori, cbfunc) {
 
   if ("sig_rt" in message && !Buffer.isBuffer(message.sig_rt)) {
     message.sig_rt = new Buffer(message.sig_rt, 'hex');
+  } 
+  if("sig_userpost" in message && !Buffer.isBuffer(message.sig_userpost)) {
+    message.sig_userpost = new Buffer(message.sig_userpost, 'hex');
   }
 
   var Twister = this._scope;
@@ -165,11 +182,13 @@ TwisterPrivKey.prototype.sign = function (message_ori, cbfunc) {
 
     var startTime = Date.now();
 
-    message = bencode.encode(message);
+    //console.log("signing",message);
+    
+    bmessage = bencode.encode(message);
 
     try {
-      var retVal = Bitcoin.message.sign(keyPair,message ,twister_network);
-      cbfunc(retVal)
+      var retVal = Bitcoin.message.sign(keyPair,bmessage ,twister_network);
+      cbfunc(retVal,message)
     } catch(e) {
       //console.log(e)
       thisResource._handleError({
