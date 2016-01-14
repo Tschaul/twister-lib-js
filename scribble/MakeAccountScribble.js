@@ -6,12 +6,16 @@ var twister_network = Bitcoin.networks.bitcoin;
 
 twister_network.messagePrefix= '\x18twister Signed Message:\n';
 
-var username = "sdfgsdfg4g3hjk3434g3";
-
 var keypair = Bitcoin.ECPair.makeRandom(twister_network);
 pubkey = keypair.getPublicKeyBuffer().toString('hex');
+privkey = keypair.toWIF();
 
 console.log(pubkey);
+console.log(privkey);
+
+var blub = Bitcoin.ECPair.fromWIF(privkey,twister_network);
+
+console.log(blub.getPublicKeyBuffer().toString('hex'));
 
 //Twister.setup({logfunc: function(l){console.log(l)}})
 

@@ -78,6 +78,14 @@ TwisterPrivKey.prototype.setKey = function (key) {
   
 }
 
+TwisterPrivKey.prototype.makeRandomKey = function (key) {
+
+  this._btcKey = Bitcoin.ECPair.makeRandom(twister_network);
+  
+  this._data = this._btcKey.toWIF();
+  
+}
+
 TwisterPrivKey.prototype.verifyKey = function (cbfunc) {
   
   var Twister = this._scope;
@@ -86,7 +94,7 @@ TwisterPrivKey.prototype.verifyKey = function (cbfunc) {
   
   Twister.getUser(this._name)._doPubKey(function(pubkey){
       
-    if(pubkey._data!=thisResource.getPubKey()){
+    if(pubkey && pubkey._data!=thisResource.getPubKey()){
       
       this._data = null;
       this._btcKey = null;
