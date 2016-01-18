@@ -26,7 +26,8 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
  Mentions     	| ✓     |                      ✓      |	-						
  Hashtags     	| ✓     |                      ✓      |	-						
  Promoted Posts|  ✓    |  -                         |	-						
- Direct Messages| -    |                            |	✓						
+ Direct Messages| -    |           -                 |	✓					
+ Group Messages| -    |           -                 |	-						
 
 ## Todo
 
