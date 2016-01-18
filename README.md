@@ -17,14 +17,14 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
 
  Resource | query | manipulate (client side wallet) | manipulate (server side wallet) 
 ------|-----|-----|------|
- Posts     	| ✓     |                            |	✓						
- Replies     	| ✓     |                            |	✓						
- Retwists     	| ✓     |                            |	✓						
- Profile     	| ✓     |                            |	✓						
- Avatar     	| ✓     |                            |	✓						
- Followings   	| ✓     |                            |	✓						
- Mentions     	| ✓     |                            |	-						
- Hashtags     	| ✓     |                            |	-						
+ Posts     	| ✓     |                          ✓  |	✓						
+ Replies     	| ✓     |                      ✓      |	✓						
+ Retwists     	| ✓     |                      ✓      |	✓						
+ Profile     	| ✓     |                      ✓      |	✓						
+ Avatar     	| ✓     |                      ✓      |	✓						
+ Followings   	| ✓     |                      ✓      |	✓						
+ Mentions     	| ✓     |                      ✓      |	-						
+ Hashtags     	| ✓     |                      ✓      |	-						
  Promoted Posts|  ✓    |  -                         |	-						
  Direct Messages| -    |                            |	✓						
 
