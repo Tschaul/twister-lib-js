@@ -20,7 +20,6 @@ var twister_network = Bitcoin.networks.bitcoin;
 
 twister_network.messagePrefix= '\x18twister Signed Message:\n';
 
-
 /**
  * Describes the public key of a user.
  * @class
@@ -35,18 +34,33 @@ var TwisterPrivKey = function (name,scope) {
   
     this._verified = true;
 
-    
+    this._status =  "unchecked";
+  
+    this._createdAt = Date.now()/1000;
+  
 }
 
 inherits(TwisterPrivKey,TwisterResource);
 
 module.exports = TwisterPrivKey;
 
+TwisterPrivKey.prototype.flatten = function () {
+
+  var flatData = TwisterResource.prototype.flatten.call(this);
+
+  flatData.status = this._status;
+  flatData.createdAt = this._createdAt;
+
+  return flatData;
+    
+}
+
 TwisterPrivKey.prototype.inflate = function (flatData) {
 
     TwisterResource.prototype.inflate.call(this,flatData);
 
-    console.log("inflating privkey",flatData);
+    this._status = flatData.status;
+    this._createdAt = flatData.createdAt;
   
     if (this._data) {
     
@@ -58,6 +72,18 @@ TwisterPrivKey.prototype.inflate = function (flatData) {
 
 TwisterPrivKey.prototype.trim = function (timestamp) {
 
+}
+
+TwisterPrivKey.prototype.getStatus = function () {
+  
+  return this._status || "unchecked";
+  
+}
+
+TwisterPrivKey.prototype.getCreatedAt = function () {
+  
+  return this._createdAt;
+  
 }
 
 TwisterPrivKey.prototype.getKey = function () {
@@ -86,31 +112,34 @@ TwisterPrivKey.prototype.makeRandomKey = function (key) {
   
 }
 
-TwisterPrivKey.prototype.verifyKey = function (cbfunc) {
+TwisterPrivKey.prototype.verifyKey = function (cbfunc,querySettings) {
   
   var Twister = this._scope;
   
   var thisResource = this;
   
-  Twister.getUser(this._name)._doPubKey(function(pubkey){
+  Twister.getUser(this._name)._doPubKey(function(pubkey,querySettings){
+          
+    if(pubkey._data){
       
-    console.log(pubkey);
-    
-    if(pubkey._data && pubkey._data!=thisResource.getPubKey()){
+      if(pubkey._data==thisResource.getPubKey()){
+        
+        thisResource._status = "confirmed";
+        
+      }else{
+        
+        thisResource._status = "conflicting";
+        
+      }
       
-      this._data = null;
-      this._btcKey = null;
-      
-      thisResource._handleError({
-        message: "Private key is in conflict with public key.",
-        code: 32064
-      })
       
     }else{
-      if(cbfunc){
-        cbfunc(thisResource);
-      }
+      
+      thisResource._status = "unconfirmed";
+      
     }
+    
+    if(cbfunc) cbfunc(thisResource);
     
   })
   

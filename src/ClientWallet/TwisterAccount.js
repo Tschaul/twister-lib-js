@@ -104,6 +104,18 @@ TwisterAccount.prototype.trim = function (timestamp) {
 
 TwisterAccount.prototype.getUsername = function () {return this._name}
 
+TwisterAccount.prototype.verifyKey = function (cbfunc,querySettings) {
+
+  this._privkey.verifyKey(cbfunc,querySettings);
+
+}
+
+TwisterAccount.prototype.getKeyStatus = function () {
+
+  this._privkey.getStatus();
+
+}
+
 TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
 	var Twister = this._scope;

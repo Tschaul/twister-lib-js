@@ -150,7 +150,7 @@ Twister.getAccounts = function () {
   var res = [];
   
   for (var acc in Twister._wallet) {
-    res.push(acc);
+    res.push(Twister._wallet[acc]);
   }
   
   return res;
@@ -208,9 +208,21 @@ Twister.importClientSideAccount = function (name,key,cbfunc) {
   Twister._wallet[name] = new TwisterAccount(name,Twister);
 
   Twister._wallet[name]._privkey.setKey(key)
-  Twister._wallet[name]._privkey.verifyKey(function(){
+  Twister._wallet[name]._privkey.verifyKey(function(key){
 
-    if(cbfunc) cbfunc(Twister._wallet[name])
+    if(key.getStatus()=="confirmed"){
+      
+      if(cbfunc) cbfunc(Twister._wallet[name])
+      
+    }else{
+      
+      Twister._handleError({
+        message: "Private key is in conflict with public key.",
+        code: 32064
+      })
+      
+    }
+    
     
   })
   
