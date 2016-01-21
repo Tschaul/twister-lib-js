@@ -94,7 +94,9 @@ TwisterPrivKey.prototype.verifyKey = function (cbfunc) {
   
   Twister.getUser(this._name)._doPubKey(function(pubkey){
       
-    if(pubkey && pubkey._data!=thisResource.getPubKey()){
+    console.log(pubkey);
+    
+    if(pubkey._data && pubkey._data!=thisResource.getPubKey()){
       
       this._data = null;
       this._btcKey = null;

@@ -220,7 +220,7 @@ Twister.importClientSideAccount = function (name,key,cbfunc) {
  * @name generateClientSideAccount 
  * @description generate an account in the client side wallet. The private key is not send to any server. 
  */
-Twister.importClientSideAccount = function (name,cbfunc) {
+Twister.generateClientSideAccount = function (name,cbfunc) {
 	
   var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
 

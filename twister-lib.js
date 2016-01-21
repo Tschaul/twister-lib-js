@@ -30807,6 +30807,14 @@ TwisterPrivKey.prototype.setKey = function (key) {
   
 }
 
+TwisterPrivKey.prototype.makeRandomKey = function (key) {
+
+  this._btcKey = Bitcoin.ECPair.makeRandom(twister_network);
+  
+  this._data = this._btcKey.toWIF();
+  
+}
+
 TwisterPrivKey.prototype.verifyKey = function (cbfunc) {
   
   var Twister = this._scope;
@@ -30815,7 +30823,9 @@ TwisterPrivKey.prototype.verifyKey = function (cbfunc) {
   
   Twister.getUser(this._name)._doPubKey(function(pubkey){
       
-    if(pubkey._data!=thisResource.getPubKey()){
+    console.log(pubkey);
+    
+    if(pubkey._data && pubkey._data!=thisResource.getPubKey()){
       
       this._data = null;
       this._btcKey = null;
@@ -32344,6 +32354,7 @@ TwisterTorrent.prototype.fillPostsCache = function (id,cbfunc) {
 
 }
 },{"../TwisterResource.js":157,"inherits":52}],147:[function(require,module,exports){
+(function (Buffer){
 'use strict';
 
 /**
@@ -32543,11 +32554,9 @@ Twister.loadServerAccounts = function (cbfunc) {
 
 }
 
-
-
 /** @function
- * @name loadAccounts 
- * @description loads available account into the wallet. 
+ * @name importClientSideAccount 
+ * @description imports an account into client side wallet. The private key is not send to any server. 
  */
 Twister.importClientSideAccount = function (name,key,cbfunc) {
 	
@@ -32559,6 +32568,53 @@ Twister.importClientSideAccount = function (name,key,cbfunc) {
   Twister._wallet[name]._privkey.verifyKey(function(){
 
     if(cbfunc) cbfunc(Twister._wallet[name])
+    
+  })
+  
+}
+
+/** @function
+ * @name generateClientSideAccount 
+ * @description generate an account in the client side wallet. The private key is not send to any server. 
+ */
+Twister.generateClientSideAccount = function (name,cbfunc) {
+	
+  var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+
+  Twister._wallet[name] = new TwisterAccount(name,Twister);
+
+  var newAccount = Twister._wallet[name];
+  
+  newAccount._privkey.makeRandomKey()
+  newAccount._privkey.verifyKey(function(){
+
+    var pubkey = newAccount._privkey.getPubKey();
+    
+    Twister.RPC("createrawtransaction",[name,pubkey],function(raw){
+      
+      console.log("raw transaction: ",raw);
+      
+      Twister.RPC("sendrawtransaction",raw,function(res){
+        
+        console.log("sent transaction",res);
+      
+        var twisterPubKey = Twister.getUser(username)._pubkey
+        
+        twisterPubKey._lastUpdate = Date.now()/1000;
+
+        twisterPubKey._data = res;
+
+        twisterPubKey._btcKey = Bitcoin.ECPair.fromPublicKeyBuffer(new Buffer(res,"hex"),twister_network);
+        
+        if(cbfunc) cbfunc(newAccount)
+        
+      },function(err){
+      console.log("error",err);
+      })
+    },function(err){
+      console.log("error",err);
+    })
+    
     
   })
   
@@ -32726,7 +32782,8 @@ Twister.onQueryComplete = function (id, cbfunc){
 
 module.exports = Twister;
 
-},{"./ClientWallet/TwisterAccount.js":139,"./ServerWallet/TwisterAccount.js":144,"./TwisterHashtag.js":150,"./TwisterPromotedPosts.js":154,"./TwisterResource.js":157,"./TwisterUser.js":160}],148:[function(require,module,exports){
+}).call(this,require("buffer").Buffer)
+},{"./ClientWallet/TwisterAccount.js":139,"./ServerWallet/TwisterAccount.js":144,"./TwisterHashtag.js":150,"./TwisterPromotedPosts.js":154,"./TwisterResource.js":157,"./TwisterUser.js":160,"buffer":177}],148:[function(require,module,exports){
 var inherits = require('inherits');
 
 var TwisterResource = require('./TwisterResource.js');
