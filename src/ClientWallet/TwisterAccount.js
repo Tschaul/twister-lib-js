@@ -112,7 +112,7 @@ TwisterAccount.prototype.verifyKey = function (cbfunc,querySettings) {
 
 TwisterAccount.prototype.getKeyStatus = function () {
 
-  this._privkey.getStatus();
+  return this._privkey.getStatus();
 
 }
 
