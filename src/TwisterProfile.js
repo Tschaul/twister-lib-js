@@ -54,13 +54,13 @@ TwisterProfile.prototype._queryAndDo = function (cbfunc) {
 
             } else {
 			
-				thisResource._handleError({
+				/*thisResource._handleError({
                   message: "DHT resource is empty.",
                   code: 32052
-                })
+                })*/
                 thisResource._revisionNumber=0;
                 thisResource._lastUpdate=Date.now()/1000;
-                //cbfunc(thisResource);
+                cbfunc(thisResource);
 			
 			}
 

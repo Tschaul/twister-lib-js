@@ -594,11 +594,13 @@ TwisterAccount.prototype._signAndPublish = function(post_ori,cbfunc){
         
         //console.log("new post msg after",status)
 
+        if(status){
+          post.lastk = status.getId();
+        }
         
         post.height = info.blocks-1;
         post.n = thisAccount._name;
         post.k = newid;
-        post.lastk = status.getId();
         post.time = Math.round(Date.now()/1000);
         
         //console.log("new post will be",post)

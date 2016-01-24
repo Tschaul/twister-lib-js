@@ -176,12 +176,12 @@ TwisterStream.prototype._queryAndDo = function (cbfunc) {
 
                     } else { 
 			
-                      thisResource._handleError({
+                      /*thisResource._handleError({
                         message: "DHT resource is empty.",
                         code: 32052
-                      })
+                      })*/
                       thisResource._updateInProgress = false;
-                      //cbfunc(null);
+                      cbfunc(null);
                       
                     }
 
@@ -360,12 +360,12 @@ TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
                 
               } else {
 			
-                thisResource._handleError({
+                /*thisResource._handleError({
                   message: "DHT resource is empty.",
                   code: 32052
-                })
+                })*/
                 thisResource._updateInProgress = false;
-                //cbfunc(null);
+                cbfunc(null);
                 
               }
           
@@ -382,6 +382,8 @@ TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
 
     }
 
+  }else{
+    cbfunc(null);
   }
     
 };
@@ -390,13 +392,17 @@ TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 
   this._checkQueryAndDo(function doUntil(post){
 
-    var retVal = cbfunc(post);
+    if(post){
+      
+      var retVal = cbfunc(post);
 
-    if(post.getLastId() && retVal!==false ) { 
+      if(post.getLastId() && retVal!==false ) { 
 
-      post.doPreviousPost(doUntil, querySettings); 
+        post.doPreviousPost(doUntil, querySettings); 
 
-    }
+      }
+      
+    }    
 
   }, querySettings);
 	
