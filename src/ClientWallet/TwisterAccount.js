@@ -359,7 +359,7 @@ TwisterAccount.prototype.updateProfileFields = function (newdata,cbfunc) {
   
     thisUser.doProfile(function(profile){
       
-      var olddata = JSON.parse(JSON.stringify(profile._data));
+      var olddata = JSON.parse(JSON.stringify(profile._data)) || {};
       
       for (var key in newdata) {
 

@@ -112,17 +112,17 @@ TwisterPrivKey.prototype.makeRandomKey = function (key) {
   
 }
 
-TwisterPrivKey.prototype.verifyKey = function (cbfunc,querySettings) {
+TwisterPrivKey.prototype.verifyKey = function (cbfunc) {
   
   var Twister = this._scope;
   
   var thisResource = this;
   
-  Twister.getUser(this._name)._doPubKey(function(pubkey,querySettings){
+  thisResource.RPC("dumppubkey",[thisResource._name],function(result){
           
-    if(pubkey._data){
+    if(result.length){
       
-      if(pubkey._data==thisResource.getPubKey()){
+      if(result==thisResource.getPubKey()){
         
         thisResource._status = "confirmed";
         
@@ -141,6 +141,8 @@ TwisterPrivKey.prototype.verifyKey = function (cbfunc,querySettings) {
     
     if(cbfunc) cbfunc(thisResource);
     
+  },function(error){
+    thisAccount._handleError(error);
   })
   
 }

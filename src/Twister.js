@@ -5,6 +5,9 @@
  * @module
  */
 
+var Bitcoin = require('bitcoinjs-lib');
+var twister_network = Bitcoin.networks.bitcoin;
+twister_network.messagePrefix= '\x18twister Signed Message:\n';
 
 var TwisterResource = require("./TwisterResource.js");
 var Twister = new TwisterResource("twister",{});
@@ -58,9 +61,15 @@ Twister.setup = function (options) {
     		Twister["_"+key] = options[key];
 			
 		}
-		
+	
 	}
 
+}
+
+Twister.getQuerySetting = function(key){
+  if(availableOptions.indexOf(key)>-1){
+    return Twister["_"+key];
+  }
 }
 
 /** @function
@@ -249,17 +258,23 @@ Twister.generateClientSideAccount = function (name,cbfunc) {
       
       console.log("raw transaction: ",raw);
       
-      Twister.RPC("sendrawtransaction",raw,function(res){
+      Twister.RPC("sendrawtransaction",[raw],function(res){
         
         console.log("sent transaction",res);
       
-        var twisterPubKey = Twister.getUser(username)._pubkey
+        var twisterPubKey = Twister.getUser(name)._pubkey
         
         twisterPubKey._lastUpdate = Date.now()/1000;
 
-        twisterPubKey._data = res;
+        twisterPubKey._data = pubkey;
 
-        twisterPubKey._btcKey = Bitcoin.ECPair.fromPublicKeyBuffer(new Buffer(res,"hex"),twister_network);
+        twisterPubKey._btcKey = Bitcoin.ECPair.fromPublicKeyBuffer(new Buffer(pubkey,"hex"),twister_network);
+        
+        var twisterStream= Twister.getUser(name)._stream
+        
+        twisterPubKey._lastUpdate = Date.now()/1000;
+
+        twisterPubKey._latestId = 0;
         
         if(cbfunc) cbfunc(newAccount)
         
@@ -272,6 +287,26 @@ Twister.generateClientSideAccount = function (name,cbfunc) {
     
     
   })
+  
+}
+
+/** @function
+ * @name checkUsernameAvailable 
+ * @description checks if username is available by querying for its public key.
+ */
+Twister.checkUsernameAvailable = function(username,cbfunc){
+  
+  Twister.RPC("dumppubkey",[username],function(pubkey){
+          
+    if(pubkey.length){
+      cbfunc(false);
+    }else{
+      cbfunc(true);
+    }
+    
+  },function(error){
+    
+  });
   
 }
 

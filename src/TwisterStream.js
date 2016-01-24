@@ -320,7 +320,7 @@ TwisterStream.prototype._doPost = function (id, cbfunc, querySettings) {
 
   var thisResource = this;
   
-  if (id && id>0) {
+  if (id && id>-1) {
 
     if (id in this._posts){
 
@@ -392,7 +392,7 @@ TwisterStream.prototype._doUntil = function (cbfunc, querySettings) {
 
     var retVal = cbfunc(post);
 
-    if( post.getLastId() && retVal!==false ) { 
+    if(post.getLastId() && retVal!==false ) { 
 
       post.doPreviousPost(doUntil, querySettings); 
 

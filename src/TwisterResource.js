@@ -212,8 +212,8 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
     if ( (typeof $ == "function") && ( typeof $.JsonRpcClient == "function") ) {
         
         var foo = new $.JsonRpcClient({ 
-        ajaxUrl: this.getQuerySetting("host"),
-        timeout: this.getQuerySetting("timeout")
+        ajaxUrl: thisResource.getQuerySetting("host"),
+        timeout: thisResource.getQuerySetting("timeout")
         });
         foo.call(method, params,
             function(ret) { if(typeof resultFunc === "function") resultFunc(ret); },
@@ -225,9 +225,9 @@ TwisterResource.prototype.RPC = function (method, params, resultFunc, errorFunc)
         var request = require('request');
         request({
           
-            uri: this.getQuerySetting("host"),
+            uri: thisResource.getQuerySetting("host"),
             method: "POST",
-            timeout: this.getQuerySetting("timeout"),
+            timeout: thisResource.getQuerySetting("timeout"),
             followRedirect: true,
             maxRedirects: 10,
             body: '{"jsonrpc": "2.0", "method": "'+method+'", "params": '+JSON.stringify(params)+', "id": 0}'
