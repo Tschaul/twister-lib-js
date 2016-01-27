@@ -238,6 +238,41 @@ Twister.importClientSideAccount = function (name,key,cbfunc) {
 }
 
 /** @function
+ * @name importClientSideAccount 
+ * @description imports an account into client side wallet. The private key is not send to any server. 
+ */
+Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,passphrase,cbfunc) {
+	
+  var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+
+  Twister._wallet[name] = new TwisterAccount(name,Twister);
+
+  Twister._wallet[name]._privkey.decryptAndImportPrivateKey(encryptPrivateKey,passphrase,function(){
+    
+    Twister._wallet[name]._privkey.verifyKey(function(key){
+
+      if(key.getStatus()=="confirmed"){
+
+        if(cbfunc) cbfunc(Twister._wallet[name])
+
+      }else{
+
+        Twister._handleError({
+          message: "Private key is in conflict with public key.",
+          code: 32064
+        })
+
+      }
+
+
+    })
+    
+  })
+  
+  
+}
+
+/** @function
  * @name generateClientSideAccount 
  * @description generate an account in the client side wallet. The private key is not send to any server. 
  */

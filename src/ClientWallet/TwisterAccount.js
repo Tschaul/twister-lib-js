@@ -116,6 +116,18 @@ TwisterAccount.prototype.getKeyStatus = function () {
 
 }
 
+TwisterAccount.prototype.encryptPrivateKey = function (passphrase,cbfunc,progressfunc) {
+
+  return this._privkey.encryptPrivateKey(passphrase,cbfunc,progressfunc);
+
+}
+
+TwisterAccount.prototype.getPrivateKey = function (passphrase,cbfunc,progressfunc) {
+
+  return this._privkey.getKey();
+
+}
+
 TwisterAccount.prototype.activateTorrents = function (cbfunc,querySettings) {
 
 	var Twister = this._scope;

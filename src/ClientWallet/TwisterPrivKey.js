@@ -6,6 +6,7 @@ var Bitcoin = require('bitcoinjs-lib');
 var Crypto = require('crypto');
 var buffer = require('buffer').Buffer;
 var bencode = require('bencode');
+var Bip38 = require('bip38');
 
 /*var Bitcoin = require('bitcoinjs-lib');
 var Crypto = require('crypto');
@@ -240,6 +241,36 @@ TwisterPrivKey.prototype.sign = function (message_ori, cbfunc) {
 
   },0);
 
+}
+
+TwisterPrivKey.prototype.encryptPrivateKey = function(passphrase,cbfunc,progressfunc){
+ 
+  var thisResource = this;
+  
+  setTimeout(function(){
+    
+    var privateKeyWif = thisResource._btcKey.toWIF()
+
+    var bip38 = new Bip38()
+    var encrypted = bip38.encrypt(privateKeyWif, passphrase, thisResource._btcKey.getAddress(), progressfunc)
+    cbfunc(encrypted);
+    
+  },100)
+   
+}
+
+TwisterPrivKey.prototype.decryptAndImportPrivateKey = function(encryptedKey,passphrase,cbfunc,progressfunc){
+ 
+  var thisResource = this;
+  
+  setTimeout(function(){
+    
+    var privateKeyWif = bip38.decrypt(encryptedKey, passphrase, progressfunc)
+    thisResource.setKey(privateKeyWif);
+    cbfunc(thisResource);
+    
+  },100)
+   
 }
 
 TwisterPrivKey.prototype.decrypt = function(message_ori,cbfunc){
