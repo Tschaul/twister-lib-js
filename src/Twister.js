@@ -247,7 +247,7 @@ Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,pa
 
   Twister._wallet[name] = new TwisterAccount(name,Twister);
 
-  Twister._wallet[name]._privkey.decryptAndImportPrivateKey(encryptPrivateKey,passphrase,function(){
+  Twister._wallet[name]._privkey.decryptAndImportPrivateKey(encryptedKey,passphrase,function(){
     
     Twister._wallet[name]._privkey.verifyKey(function(key){
 
@@ -342,6 +342,17 @@ Twister.checkUsernameAvailable = function(username,cbfunc){
   },function(error){
     
   });
+  
+}
+
+
+/** @function
+ * @name checkUsernameAvailable 
+ * @description checks if username is available by querying for its public key.
+ */
+Twister.removeAccount = function(username){
+  
+  delete Twister._wallet[username];
   
 }
 

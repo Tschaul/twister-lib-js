@@ -251,7 +251,7 @@ TwisterPrivKey.prototype.encryptPrivateKey = function(passphrase,cbfunc,progress
     
     var privateKeyWif = thisResource._btcKey.toWIF()
 
-    var bip38 = new Bip38()
+    var bip38 = new Bip38();
     var encrypted = bip38.encrypt(privateKeyWif, passphrase, thisResource._btcKey.getAddress(), progressfunc)
     cbfunc(encrypted);
     
@@ -265,6 +265,7 @@ TwisterPrivKey.prototype.decryptAndImportPrivateKey = function(encryptedKey,pass
   
   setTimeout(function(){
     
+    var bip38 = new Bip38();
     var privateKeyWif = bip38.decrypt(encryptedKey, passphrase, progressfunc)
     thisResource.setKey(privateKeyWif);
     cbfunc(thisResource);

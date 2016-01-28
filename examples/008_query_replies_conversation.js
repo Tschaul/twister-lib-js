@@ -9,6 +9,8 @@
 
 Twister = require("../src/Twister.js")
 
+Twister.setup({signatureVerification:"none"}); //,logfunc:function(log){console.log(log)}}
+
 var goUpConversation = function (post) {
         
   if (post.isReply()) {
@@ -36,4 +38,4 @@ var doRepliesRecursive = function (replies) {
 
 console.log("full conversation of black_puppydog:post729")
 
-Twister.getUser("black_puppydog").doPost(729,goUpConversation);
+Twister.getUser("ulrichard").doPost(270,goUpConversation);
