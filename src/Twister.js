@@ -272,6 +272,28 @@ Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,pa
   
 }
 
+
+/** @function
+ * @name createClientSideAccount
+ * @description generate an account in the client side wallet. The private key is not send to any server.
+ */
+Twister.createClientSideAccount = function (name,cbfunc) {
+
+  var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+
+     Twister.RPC("createwalletuser",[name],function(result){
+
+      console.log("user created in wallet" + result );
+
+        if(cbfunc) cbfunc(name)
+
+      },function(err){
+      console.log("error",err);
+      })
+}
+
+
+
 /** @function
  * @name generateClientSideAccount 
  * @description generate an account in the client side wallet. The private key is not send to any server. 

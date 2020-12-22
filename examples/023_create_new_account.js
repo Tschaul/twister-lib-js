@@ -6,6 +6,6 @@
 
 Twister = require("../src/Twister.js");
 
-Twister.generateClientSideAccount ( 'foobar12' , function () {
+Twister.createClientSideAccount ( 'foobar12' , function () {
 
 });
