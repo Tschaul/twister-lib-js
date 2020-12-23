@@ -1,11 +1,12 @@
 /*
- *  TODO: document proper usage  generateClientSideAccount - createrawtransaction
- *  TODO: add example of user to wallet - createwalletuser
- *  TODO: add example of user pub key to twister network - endnewusertransaction
+ * example of creating a new user ready in client wallet
  */
 
-Twister = require("../src/Twister.js");
 
-Twister.createClientSideAccount ( 'foobar12' , function () {
+var TwisterLocal =  require("../src/Twister.js");
 
-});
+ TwisterLocal.createNewAccount ( 'tschaul' , 
+	function(result){ 
+
+		console.log("your priv key : " + result  ); 
+	 });

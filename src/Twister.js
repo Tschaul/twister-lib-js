@@ -274,25 +274,38 @@ Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,pa
 
 
 /** @function
- * @name createClientSideAccount
- * @description generate an account in the client side wallet. The private key is not send to any server.
+ * @name createNewAccount
+ * @descriptions makes a rpc request and creates an account & key pair on local server
  */
-Twister.createClientSideAccount = function (name,cbfunc) {
 
-  var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+ Twister.createNewAccount =  function (name,cbfunc) {
 
-     Twister.RPC("createwalletuser",[name],function(result){
+     var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+     Twister._wallet[name] = new TwisterAccount(name,Twister);
 
-      console.log("user created in wallet" + result );
+     this.checkUsernameAvailable(name, function(AccountAvailability) { 
 
-        if(cbfunc) cbfunc(name)
-
-      },function(err){
-      console.log("error",err);
-      })
+	     if (AccountAvailability)
+	     {
+	        //console.log ("creating account");
+     
+		 Twister._wallet[name].createUser(name, cbfunc);
+		 
+	     } 
+     }) 
 }
 
+/*
+ * @name publishNewAccount
+ * @descriptions publishes a user from the local wallet onto the twister network
+ */
 
+Twister.publishNewAccount = function (name,cbfunc) {
+
+     var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+     Twister._wallet[name] = new TwisterAccount(name,Twister);
+     Twister._wallet[name].propagateUser(name, function(result){ return result});
+}
 
 /** @function
  * @name generateClientSideAccount 
@@ -356,8 +369,10 @@ Twister.checkUsernameAvailable = function(username,cbfunc){
   Twister.RPC("dumppubkey",[username],function(pubkey){
           
     if(pubkey.length){
+      //console.log( "key found " + pubkey);
       cbfunc(false);
     }else{
+      //console.log("no key found " + pubkey)
       cbfunc(true);
     }
     

@@ -26,7 +26,7 @@ function TwisterAccount(name,scope) {
 	this._directmessages = {};
   
     this._torrents = {};
-  
+ 
     this._privkey = new TwisterPrivKey(name,scope);
 
 }
@@ -34,6 +34,27 @@ function TwisterAccount(name,scope) {
 module.exports = TwisterAccount;
 
 inherits(TwisterAccount,TwisterResource);
+
+
+TwisterAccount.prototype.createUser = function (name, cbfunc) {
+
+    
+     this.RPC("createwalletuser",[name], cbfunc,
+
+     function(err){
+         return err
+     });
+}
+
+TwisterAccount.prototype.propagateUser = function (name, cbfunc) {
+           
+      this.RPC("sendnewusertransaction",[name], cbfunc,
+
+     function(err){
+         return err
+     })
+}
+
 
 TwisterAccount.prototype.flatten = function () {
     
