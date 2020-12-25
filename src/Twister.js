@@ -274,11 +274,11 @@ Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,pa
 
 
 /** @function
- * @name createNewAccount
+ * @name generateServerSideAccount
  * @descriptions makes a rpc request and creates an account & recieves key pair from a twister server.
  */
 
- Twister.createNewAccount =  function (name,cbfunc) {
+ Twister.generateServerSideAccount =  function (name,cbfunc) {
 
      var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
      Twister._wallet[name] = new TwisterAccount(name,Twister);
@@ -296,11 +296,11 @@ Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,pa
 }
 
 /*
- * @name publishNewAccount
+ * @name publishServerSideAccount
  * @descriptions publishes a user from the local wallet onto the twister network
  */
 
-Twister.publishNewAccount = function (name,cbfunc) {
+Twister.publishServerSideAccount = function (name,cbfunc) {
 
      var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
      Twister._wallet[name] = new TwisterAccount(name,Twister);

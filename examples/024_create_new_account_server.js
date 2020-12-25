@@ -9,7 +9,7 @@
 
 var TwisterLocal =  require("../src/Twister.js");
 
- TwisterLocal.createNewAccount ( 'tschaul' , 
+ TwisterLocal.generateServerSideAccount ( 'tschaul' , 
 	function(result){ 
 
 		console.log( "your priv key : " + result  ); 

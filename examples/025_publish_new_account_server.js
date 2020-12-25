@@ -7,8 +7,7 @@
 var TwisterLocal =  require("../src/Twister.js");
 
 
-
- TwisterLocal.publishNewAccount ( 'tschaul' ,
+ TwisterLocal.publishServerSideAccount ( 'tschaul' ,
        function() {
  });
 

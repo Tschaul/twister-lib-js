@@ -7,7 +7,7 @@
 
 var TwisterLocal =  require("../src/Twister.js");
 
- TwisterLocal.generateClientSideAccount( 'bugati_speci19' ,
+ TwisterLocal.generateClientSideAccount( 'tschaul' ,
         function(result){
 
                 console.log("your priv key : " +  result._privkey._data  );
