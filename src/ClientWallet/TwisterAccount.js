@@ -35,27 +35,6 @@ module.exports = TwisterAccount;
 
 inherits(TwisterAccount,TwisterResource);
 
-
-TwisterAccount.prototype.createUser = function (name, cbfunc) {
-
-    
-     this.RPC("createwalletuser",[name], cbfunc,
-
-     function(err){
-         return err
-     });
-}
-
-TwisterAccount.prototype.propagateUser = function (name, cbfunc) {
-           
-      this.RPC("sendnewusertransaction",[name], cbfunc,
-
-     function(err){
-         return err
-     })
-}
-
-
 TwisterAccount.prototype.flatten = function () {
     
     var flatData = TwisterResource.prototype.flatten.call(this);

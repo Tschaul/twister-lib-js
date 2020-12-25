@@ -275,12 +275,12 @@ Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,pa
 
 /** @function
  * @name createNewAccount
- * @descriptions makes a rpc request and creates an account & key pair on local server
+ * @descriptions makes a rpc request and creates an account & recieves key pair from a twister server.
  */
 
  Twister.createNewAccount =  function (name,cbfunc) {
 
-     var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+     var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
      Twister._wallet[name] = new TwisterAccount(name,Twister);
 
      this.checkUsernameAvailable(name, function(AccountAvailability) { 
@@ -302,7 +302,7 @@ Twister.importClientSideAccountFromEncryptedKey = function (name,encryptedKey,pa
 
 Twister.publishNewAccount = function (name,cbfunc) {
 
-     var TwisterAccount = require('./ClientWallet/TwisterAccount.js');
+     var TwisterAccount = require('./ServerWallet/TwisterAccount.js');
      Twister._wallet[name] = new TwisterAccount(name,Twister);
      Twister._wallet[name].propagateUser(name, function(result){ return result});
 }

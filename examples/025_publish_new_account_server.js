@@ -1,5 +1,5 @@
 /*
- * example of publishing user in client wallet to twister network
+ * example of publishing user in server wallet to twister network
  * this example will produce a 500
  */
 
