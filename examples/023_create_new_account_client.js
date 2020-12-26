@@ -7,8 +7,12 @@
 
 var TwisterLocal =  require("../src/Twister.js");
 
- TwisterLocal.generateClientSideAccount( 'tschaul' ,
-        function(result){
 
-                console.log("your priv key : " +  result._privkey._data  );
-         });
+// you may get a timeout - increase it like so
+TwisterLocal._timeout = 1000000;
+
+TwisterLocal.generateClientSideAccount( 'tschaul' ,
+       function(result){
+
+              console.log("your priv key : " +  result._privkey._data  );
+        });
