@@ -26,7 +26,7 @@ function TwisterAccount(name,scope) {
 	this._directmessages = {};
   
     this._torrents = {};
-  
+ 
     this._privkey = new TwisterPrivKey(name,scope);
 
 }
