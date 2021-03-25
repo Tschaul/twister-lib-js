@@ -28,12 +28,12 @@ A techdemo of twister-lib-js combined with react-js can be found at http://githu
  Promoted Posts|  ✓    |  -                         |	-						
  Direct Messages| -    |           -                 |	✓					
  Group Messages| -    |           -                 |	-						
+ Create Accounts| - | ✓ | ✓
 
 ## Todo
 
 ### Next Version
 
-* Implement methods to create or import accounts.
 * Implement group chats
 
 ### At Some Point
