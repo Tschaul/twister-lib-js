@@ -140,6 +140,8 @@ TwisterDirectMessages.prototype._do =  function (cbfunc) {
     
 }
 
+
+
 TwisterDirectMessages.prototype._queryAndDo = function (cbfunc) {
     	
     var thisResource = this;
@@ -168,6 +170,28 @@ TwisterDirectMessages.prototype._queryAndDo = function (cbfunc) {
 				thisResource._do(cbfunc);
 
 			} 
+
+		}, function(ret) {
+
+			thisResource._handleError(ret);
+
+		}
+					 
+	);
+ 
+        
+}
+
+
+
+
+TwisterDirectMessages.prototype._directMessage = function (cbfunc) {
+    	
+    var thisResource = this;
+        
+	thisResource.RPC("newdirectmsg", [ thisResource._walletusername , 2 , [{username: this._name}] ], function(res) {
+            		
+			//console.log(res[thisResource._name]);
 
 		}, function(ret) {
 
